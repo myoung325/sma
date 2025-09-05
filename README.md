@@ -1,5 +1,9 @@
 This fork is solely to add PWA (Progressive Web App) functionality for app-like, offline use on Chromebooks and other PWA-supporting devices.
 
+Available at:
+
+https://myoung325.github.io/sma/
+
 Original README.md
 
 A simple tool for creating stop motion animation sequences using a webcam.
