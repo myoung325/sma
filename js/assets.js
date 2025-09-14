@@ -14,7 +14,11 @@ var assets = {
     'off': 'images/off72.png',
     'on': 'images/on72.png',
     'playpause': 'images/playpause72.png',
+    'play': 'images/playpause72.png',
+    'toggle': 'images/off72.png',
     'save': 'images/save72.png',
-    'undo': 'images/undo72.png'
+    'undo': 'images/undo72.png',
+    'flip': 'images/flip72.png',
+    'clock': 'images/clock72.png'
   }
 };
