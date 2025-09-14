@@ -4,6 +4,13 @@ Available at:
 
 https://myoung325.github.io/sma/
 
+Additional changes made on Sept. 13, 2025:
+
+* Moved control buttons to above the preview window.
+* Added graphics for clock and flip buttons.
+* Added support for higher resolution cameras.  The app will select the highest supported resolution and display the selected resolution.
+* Added scaling of the GUI and preview window.
+
 Original README.md
 
 A simple tool for creating stop motion animation sequences using a webcam.
