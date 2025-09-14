@@ -23,6 +23,27 @@ html, body {
   transform-origin: top left;
 }
 
+/*
+#camera-info {
+  font-size: 24px;
+  font-family: sans-serif;
+}
+*/
+
+#camera-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-left: 12px;
+  font-size: 20px;
+  font-family: sans-serif;
+}
+
+.button-container {
+  display: flex;
+  align-items: center;      /* This centers all contents vertically */
+}
+
 dialog p {
   font-size: 2em;
 }
@@ -46,6 +67,16 @@ dialog button {
   /* Width & height will be set dynamically by JS to match video resolution */
 }
 
+/* Remove fixed width/height so video & canvases resize dynamically */
+/*
+#video-container > * {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+*/
 #video-container > * {
   width: 100%;
   height: auto;
@@ -120,11 +151,21 @@ video {
   flex: 99 0 auto;
 }
 
+/*
 #thumbnail-container {
   display: flex;
   overflow-x: auto;
-  max-width: 100%; /* responsive, max width of parent */
+  max-width: 100%;
   margin-top: 10px;
+}
+*/
+
+#thumbnail-container {
+  display: flex;
+  overflow-x: auto;
+  max-width: 100%;
+  margin-top: 10px;
+  min-height: 100px; /* ðŸ‘ˆ Ensures space is reserved */
 }
 
 #thumbnail-container > canvas {
@@ -143,13 +184,32 @@ video {
   flex: 1 1 auto;
 }
 
+#button-wrapper {
+  display: flex;
+  justify-content: center; /* centers the group of buttons + camera-info */
+  align-items: center;     /* vertically centers the items */
+  flex-wrap: nowrap;
+  gap: 20px;               /* space between buttons and camera-info */
+}
+
 #button-container {
   display: flex;
-  flex-wrap: wrap;       /* Allow buttons to wrap to next line if needed */
-  justify-content: center; /* Center the buttons horizontally */
-  gap: 10px;             /* Space between buttons */
-  margin-bottom: 15px;   /* Space below buttons before video */
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 15px;
 }
+
+/*
+#button-container {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+*/
 
 body {
   display: flex;
@@ -161,6 +221,12 @@ body {
   background: #f0f0f0;     /* optional: subtle background */
   box-sizing: border-box;
 }
+
+
+/*#top-container {*/
+/*  max-width: 1920px; /* allow large video widths */
+/*  width: 100%;       /* responsive */
+/*}*/
 
 #top-container {
   display: flex;
@@ -184,11 +250,26 @@ body {
   pointer-events: none; /* so it doesn't block video */
 }
 
+/*
+#play-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+*/
+
 #play-canvas {
   position: absolute;
   top: 0;
   left: 0;
   pointer-events: none;
+  /* REMOVE these:
+  width: 100%;
+  height: 100%;
+  */
 }
 
 .button72 {
@@ -222,6 +303,7 @@ body {
   width: 58px;
   height: 58px;
   align-self: center;
+  /* transform: translateX(1px); /* Adjust left/right manually */
 }
 
 #svg-defs {
