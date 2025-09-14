@@ -2,151 +2,251 @@
   display: flex;
   flex-direction: row;
 }
+
 .vflex {
   display: flex;
   flex-direction: column;
 }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* Prevent scrollbars */
+  height: 100%;
+  width: 100%;
+}
+
+#scalable-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  transform-origin: top left;
+}
+
+dialog p {
+  font-size: 2em;
+}
+
+dialog input {
+  font-size: 2em;
+}
+
+dialog button {
+  font-size: 2em;
+}
+
 #video-column {
   margin: 10px;
-  flex: 0 0;
+  flex: 0 0 auto; /* prevent shrinking */
   will-change: transform;
 }
+
 #video-container {
   position: relative;
+  /* Width & height will be set dynamically by JS to match video resolution */
 }
+
 #video-container > * {
-  width: 640px;
-  height: 480px;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
 }
+
 video {
   position: absolute;
   top: 0;
   left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* keep aspect ratio and cover container */
 }
+
 #message-container {
+  display: flex;
   justify-content: center;
 }
+
 #video-message {
   font-size: 36px;
   text-align: center;
   z-index: 1;
 }
+
 #progress-container {
   position: absolute;
-  top: 475px;
+  bottom: 5px; /* changed from top:475px to bottom for better scaling */
+  left: 0;
   overflow: hidden;
-  width: 650px;
+  width: 100%; /* full width of video container */
+  max-width: 100%; /* prevent overflow */
   height: 10px;
+  z-index: 10;
 }
+
 #progress-marker {
- display: block;
- width:645px;
- height:10px;
- color:red;
- transform:translateX(-650px);
+  display: block;
+  width: 100%; /* use full width */
+  height: 10px;
+  color: red;
+  transform: translateX(-100%); /* animate offscreen initially */
+  transition: transform 0.3s ease;
 }
+
 #progress-line {
   stroke: currentColor;
   stroke-width: 2px;
 }
+
 #progress-circle {
- stroke: none;
- fill:currentColor;
+  stroke: none;
+  fill: currentColor;
 }
+
 #speed-container {
   display: flex;
   flex-flow: row nowrap;
   justify-content: space-between;
+  margin-top: 10px;
 }
+
 .speed-label {
   flex: 0 1 auto;
   flex-basis: 120px;
   margin: 0;
   text-align: right;
 }
+
 #playbackSpeed {
   flex: 99 0 auto;
 }
+
 #thumbnail-container {
   display: flex;
   overflow-x: auto;
-  max-width: 640px;
+  max-width: 100%; /* responsive, max width of parent */
+  margin-top: 10px;
 }
+
 #thumbnail-container > canvas {
   margin: 0 5px;
+  height: 90px; /* fixed height for thumbnails */
+  width: auto;
 }
+
 #thumbnail-cursor-container {
   position: absolute;
   left: 0;
   top: 0;
 }
+
 #control-column {
-  flex: 1 1;
+  flex: 1 1 auto;
 }
+
 #button-container {
   display: flex;
-  flex-flow: row wrap;
-  justify-content: flex-start;
+  flex-wrap: wrap;       /* Allow buttons to wrap to next line if needed */
+  justify-content: center; /* Center the buttons horizontally */
+  gap: 10px;             /* Space between buttons */
+  margin-bottom: 15px;   /* Space below buttons before video */
 }
+
+body {
+  display: flex;
+  justify-content: center; /* centers horizontally */
+  align-items: flex-start; /* aligns items at the top vertically */
+  min-height: 100vh;       /* ensure body fills viewport height */
+  margin: 0;               /* remove default margins */
+  padding: 20px;           /* optional: some padding around */
+  background: #f0f0f0;     /* optional: subtle background */
+  box-sizing: border-box;
+}
+
+#top-container {
+  display: flex;
+  justify-content: center;
+}
+
 #stream {
   position: absolute;
   z-index: 1;
   border: 1px solid black;
 }
+
 #snapshot-canvas {
   position: absolute;
   top: 0;
   left: 0;
   z-index: 2;
   opacity: 0.5;
+  width: 100%;
+  height: 100%;
+  pointer-events: none; /* so it doesn't block video */
 }
+
 #play-canvas {
   position: absolute;
   top: 0;
   left: 0;
+  pointer-events: none;
 }
+
 .button72 {
   display: flex;
   flex-direction: column;
   background-color: #b0c4de;
   border-radius: 15px;
-  border: 3px;
-  padding: 10px;
-  margin: 10px;
+  border: 2px solid transparent;
+  padding: 2px;
+  margin: 2px;
   width: 92px;
   min-height: 92px;
   justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
 }
+
 .button72.pressed {
   background-color: #4682b4;
+  border-color: #315f91;
 }
+
 .button72 > .iconContainer {
   will-change: transform;
-  width: 72px;
-  height: 72px;
+  width: 48px;
+  height: 48px;
+  position: relative;
 }
+
 .button72 > img {
-  width:72px;
-  height:72px;
+  width: 58px;
+  height: 58px;
+  align-self: center;
 }
+
 #svg-defs {
-  width:0;
-  height:0;
+  width: 0;
+  height: 0;
 }
+
 .iconContainer > svg {
-  position:absolute;
+  position: absolute;
   top: 0;
   left: 0;
   width: 72px;
   height: 72px;
   --width: 72;
   --height: 72;
+  transform: translateX(17px);
 }
+
 .button72 > .buttonLabel {
   font: normal normal normal 18px/normal Arial;
   text-align: center;
-  width:100%;
+  width: 100%;
+  user-select: none;
 }
+
 #installButton {
   position: fixed;
   bottom: 20px;
@@ -161,35 +261,48 @@ video {
   text-align: center;
   color: white;
   font-family: Arial;
+  cursor: pointer;
+  user-select: none;
 }
+
 .center-circle {
-  cx: calc(var(--width)/2);
-  cy: calc(var(--height)/2);
+  cx: calc(var(--width) / 2);
+  cy: calc(var(--height) / 2);
 }
-pre, span {
+
+pre,
+span {
   font: normal normal normal 24px/normal Arial;
+  user-select: text;
 }
+
 .not-recording {
   color: black;
 }
+
 #clockContainer {
-  width:100px;
-  height:100px;
+  width: 100px;
+  height: 100px;
   position: absolute;
   right: 10px;
   bottom: 0;
+  pointer-events: none;
 }
-#clock, #clock-hand {
+
+#clock,
+#clock-hand {
   width: 100px;
   height: 100px;
   position: absolute;
 }
+
 .ripple-decay {
   will-change: transform;
   animation-duration: 1.5s;
   animation-name: ripple-decay;
   animation-iteration-count: infinite;
 }
+
 @keyframes ripple-decay {
   from {
     transform: scale(0.25);
@@ -208,6 +321,7 @@ pre, span {
   animation-timing-function: ease-in;
   animation-iteration-count: 3;
 }
+
 @keyframes recede-decay {
   from {
     transform: scale(1);
@@ -224,6 +338,7 @@ pre, span {
   animation-name: slide-right;
   animation-timing-function: linear;
 }
+
 @keyframes slide-right {
   from {
     transform: translateX(-640px);
