@@ -8,15 +8,88 @@
 
 var main = main || {};
 
-document.addEventListener('DOMContentLoaded', evt => {
-  evt.target.getElementById('toggleButton').firstChild.src = assets['images']['off'];
-  evt.target.getElementById('captureButton').firstChild.src = assets['images']['capture'];
-  evt.target.getElementById('undoButton').firstChild.src = assets['images']['undo'];
-  evt.target.getElementById('playButton').firstChild.src = assets['images']['playpause'];
-  evt.target.getElementById('clearButton').firstChild.src = assets['images']['clear'];
-  evt.target.getElementById('saveButton').firstChild.src = assets['images']['save'];
-  evt.target.getElementById('loadButton').firstChild.src = assets['images']['load'];
+function scaleToFitWindow() {
+  const wrapper = document.getElementById('scalable-wrapper');
+
+  // Temporarily remove transform to measure natural size
+  wrapper.style.transform = 'none';
+
+  const contentWidth = wrapper.scrollWidth;
+  const contentHeight = wrapper.scrollHeight;
+
+  const scaleX = window.innerWidth / contentWidth;
+  const scaleY = window.innerHeight / contentHeight;
+  const scale = Math.min(scaleX, scaleY);
+
+  // Center horizontally (and vertically if desired)
+  const translateX = (window.innerWidth / 2) - (contentWidth * scale / 2);
+  const translateY = 0; // or center vertically: (window.innerHeight / 2) - (contentHeight * scale / 2);
+
+  wrapper.style.transformOrigin = 'top left';
+  wrapper.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+}
+
+function updateCameraResolution(videoElement) {
+  const stream = videoElement.srcObject;
+  if (!stream) return;
+
+  const track = stream.getVideoTracks()[0];
+  if (!track) return;
+
+  const settings = track.getSettings();
+  const width = settings.width || videoElement.videoWidth || 1280;
+  const height = settings.height || videoElement.videoHeight || 720;
+
+  const resolutionDisplay = document.getElementById('camera-resolution');
+  if (resolutionDisplay) {
+    resolutionDisplay.textContent = `${width}×${height}`;
+  }
+
+  // NEW: Dynamically scale using full layout height
+  requestAnimationFrame(scaleToFitWindow);
+}
+
+window.addEventListener('resize', () => {
+  requestAnimationFrame(scaleToFitWindow);
 });
+
+window.addEventListener('load', scaleToFitWindow);
+
+document.addEventListener('DOMContentLoaded', evt => {
+  const buttonIds = [
+    'toggleButton',
+    'captureButton',
+    'undoButton',
+    'playButton',
+    'clearButton',
+    'saveButton',
+    'loadButton',
+    'flipButton',
+    'clockButton'
+  ];
+
+  buttonIds.forEach(id => {
+    const button = document.getElementById(id);
+    if (!button) {
+      console.warn(`Button with ID ${id} not found.`);
+      return;
+    }
+
+    const img = button.querySelector('img');
+    if (!img) {
+      console.warn(`No <img> found inside button with ID ${id}`);
+      return;
+    }
+
+    const key = id.replace('Button', '');
+    if (assets.images[key]) {
+      img.src = assets.images[key];
+    } else {
+      console.warn(`No image found in assets for key "${key}"`);
+    }
+  });
+});
+
 
 window.addEventListener('load', evt => {
   // Create Animator object and set up callbacks.
@@ -325,31 +398,42 @@ window.addEventListener('load', evt => {
   let clearAudioButton = document.getElementById('clearAudioButton');
   clearAudioButton.addEventListener("click", an.clearAudio.bind(an));
 
-  let setUpCameraSelectAndAttach = cameras => {
-    if (!cameras || cameras.length < 2) {
-      an.attachStream();
-      return;
-    }
-    let videoColumnDiv = document.getElementById('video-column');
-    let selectDiv = document.createElement('div');
-    videoColumnDiv.appendChild(selectDiv);
-    let cameraSelect = document.createElement('select');
-    cameraSelect.id = 'camera-select';
-    selectDiv.appendChild(cameraSelect);
-    for (let i = 0; i < cameras.length; i++) {
-      let cameraOption = document.createElement('option');
-      cameraOption.value = cameras[i];
-      cameraOption.innerText = 'Camera ' + (i + 1);
-      cameraSelect.appendChild(cameraOption);
-      if (i === 0)
-        cameraOption.selected = true;
-    }
-    cameraSelect.onchange = e => {
-      an.detachStream();
-      an.attachStream(e.target.value);
-    };
-    an.attachStream(cameras[0].deviceId);
+let setUpCameraSelectAndAttach = cameras => {
+  if (!cameras || cameras.length < 2) {
+    an.attachStream().then(() => {
+      updateCameraResolution(document.getElementById('video'));
+    });
+    return;
+  }
+
+  let videoColumnDiv = document.getElementById('video-column');
+  let selectDiv = document.createElement('div');
+  videoColumnDiv.appendChild(selectDiv);
+
+  let cameraSelect = document.createElement('select');
+  cameraSelect.id = 'camera-select';
+  selectDiv.appendChild(cameraSelect);
+
+  for (let i = 0; i < cameras.length; i++) {
+    let cameraOption = document.createElement('option');
+    cameraOption.value = cameras[i].deviceId;
+    cameraOption.innerText = 'Camera ' + (i + 1);
+    cameraSelect.appendChild(cameraOption);
+    if (i === 0)
+      cameraOption.selected = true;
+  }
+
+  cameraSelect.onchange = e => {
+    an.detachStream();
+    an.attachStream(e.target.value).then(() => {
+      updateCameraResolution(document.getElementById('video'));
+    });
   };
+
+  an.attachStream(cameras[0].deviceId).then(() => {
+    updateCameraResolution(document.getElementById('video'));
+  });
+};
 
   // Everything is set up, now connect to camera.
   if (self.navigator && navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
