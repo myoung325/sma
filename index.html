@@ -68,7 +68,8 @@
   <div id="top-container" class="hflex">
     <div id="video-column">
       <!-- MOVED BUTTONS ABOVE VIDEO -->
-      <div id="button-container">
+      <div id="button-wrapper">
+	  <div id="button-container">
         <button class="button72" id="toggleButton"><img /><div class="buttonLabel">On/Off</div></button>
         <button class="button72" id="captureButton"><img /><div class="buttonLabel">Capture</div></button>
         <button class="button72" id="undoButton"><img /><div class="buttonLabel">Undo</div></button>
@@ -123,12 +124,13 @@
         <button class="button72" id="loadButton"><img /><div class="buttonLabel">Load</div></button>
 
 <div id="camera-info">
-  <div>Camera</div>
-  <div>Resolution:</div>
-  <div id="camera-resolution">Loading...</div>
+  <div class="camera-line">Camera</div>
+  <div class="camera-line">Resolution:</div>
+  <div class="camera-line" id="camera-resolution">Loading...</div>
 </div>
   
       </div>
+	  </div>
 
       <div id="video-container">
 
