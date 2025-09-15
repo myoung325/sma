@@ -4,7 +4,7 @@ Available at:
 
 https://myoung325.github.io/sma/
 
-Additional changes made on Sept. 13-15, 2025 with lots of genAI assistance:
+Additional changes made on Sept. 13-15, 2025 with lots of genAI (mostly ChatGPT-4.1-mini, some Gemini 2.5 Flash) assistance:
 
 * Moved control buttons to above the preview window.
 * Added graphics for clock and flip buttons.
