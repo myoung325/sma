@@ -8,6 +8,42 @@
 
 var main = main || {};
 
+/*
+function scaleToFitWindow() {
+  const designWidth = 1920;
+  const designHeight = 1330;
+  const scaleX = window.innerWidth / designWidth;
+  const scaleY = window.innerHeight / designHeight;
+  const scale = Math.min(scaleX, scaleY);
+
+  const wrapper = document.getElementById('scalable-wrapper');
+
+  // Calculate translation to center the scaled content
+  const translateX = (window.innerWidth - designWidth * scale) / 2;
+  const translateY = (window.innerHeight - designHeight * scale) / 2;
+
+  wrapper.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+}
+*/
+
+/*
+function scaleToFitWindow() {
+  const wrapper = document.getElementById('scalable-wrapper');
+
+  // Temporarily reset scaling to get accurate measurements
+  wrapper.style.transform = 'none';
+
+  const contentWidth = wrapper.scrollWidth;
+  const contentHeight = wrapper.scrollHeight;
+
+  const scaleX = window.innerWidth / contentWidth;
+  const scaleY = window.innerHeight / contentHeight;
+  const scale = Math.min(scaleX, scaleY);
+
+  wrapper.style.transform = `scale(${scale})`;
+}
+*/
+
 function scaleToFitWindow() {
   const wrapper = document.getElementById('scalable-wrapper');
 
@@ -54,6 +90,20 @@ window.addEventListener('resize', () => {
 });
 
 window.addEventListener('load', scaleToFitWindow);
+
+/*
+document.addEventListener('DOMContentLoaded', evt => {
+  evt.target.getElementById('toggleButton').firstChild.src = assets['images']['off'];
+  evt.target.getElementById('captureButton').firstChild.src = assets['images']['capture'];
+  evt.target.getElementById('undoButton').firstChild.src = assets['images']['undo'];
+  evt.target.getElementById('playButton').firstChild.src = assets['images']['playpause'];
+  evt.target.getElementById('clearButton').firstChild.src = assets['images']['clear'];
+  evt.target.getElementById('saveButton').firstChild.src = assets['images']['save'];
+  evt.target.getElementById('loadButton').firstChild.src = assets['images']['load'];
+  evt.target.getElementById('flipButton').firstChild.src = assets['images']['flip'];
+  evt.target.getElementById('clockButton').firstChild.src = assets['images']['clock'];
+});
+*/
 
 document.addEventListener('DOMContentLoaded', evt => {
   const buttonIds = [
@@ -108,7 +158,8 @@ window.addEventListener('load', evt => {
   let fps = document.getElementById('fps');
   playbackSpeedSelector.addEventListener("input", evt => {
     an.setPlaybackSpeed(playbackSpeed());
-    fps.innerText = '  ' + playbackSpeed().toFixed(1);
+    //fps.innerText = '  ' + playbackSpeed().toFixed(1);
+	fps.innerText = Math.round(playbackSpeed());           // using whole numbers now
   });
   an.setPlaybackSpeed(playbackSpeed());
 
