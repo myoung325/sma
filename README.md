@@ -10,6 +10,7 @@ Additional changes made on Sept. 13, 2025:
 * Added graphics for clock and flip buttons.
 * Added support for higher resolution cameras.  The app will select the highest supported resolution and display the selected resolution.
 * Added scaling of the GUI and preview window.
+* Specifying "0.99999" in "imageCanvas.toBlob(blob => { resolve(blob) }, 'image/webp', 0.99999);" in aniamtor.js for higher frame image quality.
 
 Original README.md
 
