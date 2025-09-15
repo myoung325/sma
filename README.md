@@ -4,7 +4,7 @@ Available at:
 
 https://myoung325.github.io/sma/
 
-Additional changes made on Sept. 13, 2025:
+Additional changes made on Sept. 13-14, 2025:
 
 * Moved control buttons to above the preview window.
 * Added graphics for clock and flip buttons.
