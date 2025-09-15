@@ -13,6 +13,10 @@ Additional changes made on Sept. 13-15, 2025 with lots of genAI assistance:
 * Specifying "0.99999" in "imageCanvas.toBlob(blob => { resolve(blob) }, 'image/webp', 0.99999);" in aniamtor.js for higher frame image quality.
 * Changed selectable FPS range from 5fps to 30fps in single frame increments.
 
+Currently needing to be fixed:
+
+* The red progress line/dot when playing footage isn't rendering properly.
+
 Original README.md
 
 A simple tool for creating stop motion animation sequences using a webcam.
