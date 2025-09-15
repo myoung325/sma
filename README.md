@@ -4,7 +4,7 @@ Available at:
 
 https://myoung325.github.io/sma/
 
-Additional changes made on Sept. 13-14, 2025:
+Additional changes made on Sept. 13-14, 2025 with lots of genAI assistance:
 
 * Moved control buttons to above the preview window.
 * Added graphics for clock and flip buttons.
