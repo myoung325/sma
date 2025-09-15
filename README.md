@@ -4,13 +4,14 @@ Available at:
 
 https://myoung325.github.io/sma/
 
-Additional changes made on Sept. 13-14, 2025 with lots of genAI assistance:
+Additional changes made on Sept. 13-15, 2025 with lots of genAI assistance:
 
 * Moved control buttons to above the preview window.
 * Added graphics for clock and flip buttons.
 * Added support for higher resolution cameras.  The app will select the highest supported resolution and display the selected resolution.
 * Added scaling of the GUI and preview window and placeholder for frames timeline.
 * Specifying "0.99999" in "imageCanvas.toBlob(blob => { resolve(blob) }, 'image/webp', 0.99999);" in aniamtor.js for higher frame image quality.
+* Changed selectable FPS range from 5fps to 30fps in single frame increments.
 
 Original README.md
 
