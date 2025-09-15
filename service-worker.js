@@ -1,4 +1,4 @@
-const CACHE_NAME = 'stop-motion-cache-v12'; // Increment this version when you deploy updates
+const CACHE_NAME = 'stop-motion-cache-v13'; // Increment this version when you deploy updates
 
 const urlsToCache = [
   './',
@@ -45,4 +45,3 @@ self.addEventListener('fetch', event => {
       .then(response => response || fetch(event.request))
   );
 });
-
