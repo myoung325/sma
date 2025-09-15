@@ -14,33 +14,6 @@ var animator = animator || {};
   const STATE_RECORD = 2;
 
   class Animator {
-
-/*
-    constructor(video, snapshotCanvas, playCanvas, messageDiv) {
-      this.video = video;
-      this.videoStream = null;
-      this.snapshotCanvas = snapshotCanvas;
-      this.snapshotContext = snapshotCanvas.getContext('2d');
-      this.playCanvas = playCanvas;
-      this.playContext = playCanvas.getContext('2d');
-      this.playTimer = null;
-      this._flip = false;
-      this.messageDiv = messageDiv;
-      this.playbackSpeed = 24.0;
-      this.frames = [];
-      this.frameWebps = [];
-      this.streamOn = true;
-      this.name = null;
-      this.framesInFlight = 0;
-      this.loadFinishPending = false;
-      this.audio = null;
-      this.audioRecorder = null;
-      this.audioChunks = [];
-      this.audioBlob = null;
-      this.setDimensions(snapshotCanvas.width, snapshotCanvas.height);
-      this.zeroPlayTime = 0;
-    }
-*/
 	constructor(video, snapshotCanvas, playCanvas, messageDiv) {
 	  this.video = video;
 	  this.videoStream = null;
@@ -66,7 +39,6 @@ var animator = animator || {};
 	  // 👇 NO setDimensions here anymore
 	}
 
-
     setPlaybackSpeed(speed) {
       if (speed > 0)
         this.playbackSpeed = speed;
@@ -77,17 +49,6 @@ var animator = animator || {};
       this.messageDiv.innerText = "Cannot connect to camera.";
       return false;
     }
-
-	/*
-    setDimensions(w, h) {
-      this.w = w;
-      this.h = h;
-      this.video.width = w;
-      this.video.height = h;
-      this.snapshotCanvas.width = this.w;
-      this.snapshotCanvas.height = this.h;
-    }
-	*/
 	
 	setDimensions(w, h) {
 	  this.w = w;
@@ -106,35 +67,6 @@ var animator = animator || {};
       this._flip = !this._flip;
     }
 
-/*
-    attachStream(sourceId) {
-      this.messageDiv.innerText = "";
-      let constraints = {
-        audio: false,
-        frameRate: 15,
-        width: 640,
-        height: 480
-      };
-      this.videoSourceId = sourceId;
-      if (sourceId) {
-        constraints.video = {
-          optional: [{
-            sourceId: sourceId
-          }]
-        };
-      } else {
-        constraints.video = true;
-      }
-      return navigator.mediaDevices.getUserMedia(constraints).then(stream => {
-        this.video.srcObject = stream;
-        this.videoStream = stream;
-        this.streamOn = true;
-        return stream;
-      }).catch(this.videoCannotPlayHandler.bind(this));
-    }
-*/
-
-
     async attachStream() {
       this.messageDiv.innerText = "";
 
@@ -148,7 +80,6 @@ const constraintsList = [
   { video: { width: 640,  height: 480,  facingMode: "environment" }, audio: false }, // VGA 4:3
   { video: { width: 320,  height: 240,  facingMode: "environment" }, audio: false }, // QVGA fallback
 ];
-
 
       let stream = null;
       for (const constraints of constraintsList) {
