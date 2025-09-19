@@ -67,6 +67,31 @@ dialog button {
   /* Width & height will be set dynamically by JS to match video resolution */
 }
 
+
+
+#countdown {
+  position: absolute;       /* position over the video */
+  top: -70%;                /* vertical center */
+  left: 0%;               /* horizontal center */
+  transform: translate(-50%, -50%); /* center the SVG exactly */
+  width: 100px;            /* or adjust as needed */
+  height: 100px;           /* or bigger if needed */
+  overflow: visible;       /* allow the big text not to get clipped */
+  pointer-events: none;    /* clicks go through */
+  z-index: 10;             /* above video */
+}
+
+#countdown text {
+  dominant-baseline: middle;
+  text-anchor: middle;
+  fill: red;
+  font-size: 36pt;
+  user-select: none;
+}
+
+
+
+
 /* Remove fixed width/height so video & canvases resize dynamically */
 /*
 #video-container > * {
@@ -281,7 +306,28 @@ body {
   */
 }
 
+/*
 .button72 {
+  display: flex;
+  flex-direction: column;
+  background-color: #b0c4de;
+  border-radius: 15px;
+  border: 2px solid transparent;
+  padding: 2px;
+  margin: 2px;
+  width: 92px;
+  min-height: 92px;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+  overflow: hidden;
+  position: relative;
+}
+*/
+
+.button72 {
+  position: relative; /* positioning context */
+  overflow: hidden;   /* prevent children from expanding container */
   display: flex;
   flex-direction: column;
   background-color: #b0c4de;

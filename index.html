@@ -75,12 +75,19 @@
         <button class="button72" id="undoButton"><img /><div class="buttonLabel">Undo</div></button>
         <button class="button72" id="playButton"><img /><div class="buttonLabel">Play/Stop</div></button>
         <button class="button72" id="clearButton"><img /><div class="buttonLabel">Clear</div></button>
-        <button class="button72" id="clockButton"><img /><div class="buttonLabel">Clock</div></button>
-        <button class="button72" id="flipButton"><img /><div class="buttonLabel">Flip</div></button>
+        
+		<!--button class="button72" id="clockButton"><img /><div class="buttonLabel">Clock</div></button-->
+
+<button class="button72" id="clockButton" style="display: none;">
+  <img />
+  <div class="buttonLabel">Clock</div>
+</button>
+        
+		<button class="button72" id="flipButton"><img /><div class="buttonLabel">Flip</div></button>
 
 		<!--button class="button72" id="recordAudioButton"><img /><div class="buttonLabel">Record Audio</div></button-->
 
-        <button class="button72" id="recordAudioButton">
+        <!--button class="button72" id="recordAudioButton">
           <div class="iconContainer audioIcon">
 
 			<svg width="72" height="72" viewBox="0 0 72 72" style="width: 50px; height: 50px;">
@@ -101,9 +108,9 @@
             </svg>
           </div>
           <div class="buttonLabel">Record Audio</div>
-        </button>
+        </button-->
 
-        <button class="button72" id="clearAudioButton">
+        <!--button class="button72" id="clearAudioButton">
           <div class="iconContainer audioIcon">
             <svg width="72" height="72" viewBox="0 0 72 72" style="width: 50px; height: 50px;">
               <g style="color:black">
@@ -118,7 +125,34 @@
             </svg>
           </div>
           <div class="buttonLabel">Clear Audio</div>
-        </button>
+        </button-->
+
+		<!-- NEW -->
+
+<button class="button72" id="recordAudioButton">
+  <img />
+  <div class="buttonLabel">Record Audio</div>
+
+</button>
+
+
+
+
+
+
+		
+<!--button class="button72" id="recordAudioButton">
+  <img />
+  <svg id="countdown" class="recede-decay" style="display: none">
+    <text style="fill:red; font-size: 54pt; text-anchor: middle;" x="36" y="60"></text>
+  </svg>
+  <div class="buttonLabel">Record Audio</div>
+</button-->
+
+		<button class="button72" id="clearAudioButton">
+		  <img />
+		  <div class="buttonLabel">Clear Audio</div>
+		</button>
 
         <button class="button72" id="saveButton"><img /><div class="buttonLabel">Save</div></button>
         <button class="button72" id="loadButton"><img /><div class="buttonLabel">Load</div></button>
@@ -135,6 +169,11 @@
       <div id="video-container">
 
 		<video id="video" autoplay></video>
+		
+<svg id="countdown" class="recede-decay" style="display: none;" width="100" height="100" viewBox="0 0 72 72" aria-hidden="true" focusable="false">
+  <text x="36" y="54" fill="red" font-size="54pt" text-anchor="middle" dominant-baseline="middle"></text>
+</svg>
+		
 		<canvas id="snapshot-canvas"></canvas>
 		<canvas id="play-canvas"></canvas>
 
