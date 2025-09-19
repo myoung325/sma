@@ -256,10 +256,11 @@ if (toggleButton && toggleButton.firstElementChild) {
     clearConfirmDialog.close();
   });
 
+/*
   let saveDialog = document.getElementById('saveDialog');
   let fileNameInput = saveDialog.querySelector('input');
-
   let saveButton = document.getElementById('saveButton');
+
   saveButton.addEventListener("click", evt => {
     if (!an.frames.length) return;
     if (an.name) fileNameInput.value = an.name;
@@ -286,7 +287,47 @@ if (toggleButton && toggleButton.firstElementChild) {
     });
     saveDialog.showModal();
   });
+*/
 
+let saveDialog = document.getElementById('saveDialog');
+let fileNameInput = saveDialog.querySelector('input');
+let saveButton = document.getElementById('saveButton');
+let saveConfirmButton = document.getElementById('saveConfirmButton');
+
+// Handle the "Save" button (to open the dialog)
+saveButton.addEventListener("click", evt => {
+  if (!an.frames.length) return;
+  if (an.name) fileNameInput.value = an.name;
+  saveDialog.showModal();
+});
+
+const stopPropagationHandler = e => e.stopPropagation();
+
+saveConfirmButton.addEventListener("click", () => {
+  let value = fileNameInput.value;
+  if (!value.length) value = 'StopMotion';
+  value = value.replace(/\s+/g, '_');
+  value = value.replace(/[^\w\-\.]+/g, '');
+  if (value.endsWith('.mng')) value = value.substring(0, value.length - 4);
+  if (!value.endsWith('.webm')) value += '.webm';
+  saveDialog.close();
+
+  let topContainer = document.getElementById('top-container');
+  topContainer.style.opacity = 0.5;
+  topContainer.addEventListener('click', stopPropagationHandler, true);
+
+  an.save(value).then(() => {
+    topContainer.style.opacity = null;
+    topContainer.removeEventListener('click', stopPropagationHandler, true);
+  }).catch(err => {
+    console.log(err);
+    topContainer.style.opacity = null;
+    topContainer.removeEventListener('click', stopPropagationHandler, true);
+  });
+});
+
+
+/*
   let loadButton = document.getElementById('loadButton');
   loadButton.addEventListener("click", evt => {
     let fileInput = document.createElement('input');
@@ -306,6 +347,36 @@ if (toggleButton && toggleButton.firstElementChild) {
     }, false);
     fileInput.click();
   });
+*/
+
+//const stopPropagationHandler = e => e.stopPropagation();
+
+let loadButton = document.getElementById('loadButton');
+loadButton.addEventListener("click", evt => {
+  let fileInput = document.createElement('input');
+  fileInput.type = "file";
+
+  fileInput.addEventListener("change", evt => {
+    if (evt.target.files[0]) {
+      let topContainer = document.getElementById('top-container');
+      topContainer.style.opacity = 0.5;
+
+      // Use the same stable handler here:
+      topContainer.addEventListener('click', stopPropagationHandler, true);
+
+      an.load(evt.target.files[0], () => {
+        topContainer.style.opacity = null;
+        topContainer.removeEventListener('click', stopPropagationHandler, true);
+      }, frameRate => {
+        playbackSpeedSelector.value = frameRate;
+      });
+    }
+  }, false);
+
+  fileInput.click();
+});
+
+
 
   let audioStream;
   let isRecording = false;
