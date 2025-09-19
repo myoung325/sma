@@ -15,6 +15,8 @@ Additional changes made on Sept. 13-19, 2025 with lots of genAI (mostly ChatGPT-
 * Made the On/Off button control enabling/disabling onion skinning.
 * Added some different button graphics.
 * Disabled the red progress line/dot when playing footage.
+* Changed audio recording buttons from SVGs to PNGs.
+* Made audio recording countdown appear over the video preview.
 
 Currently needing to be fixed:
 
