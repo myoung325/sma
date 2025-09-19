@@ -45,16 +45,29 @@ html, body {
 }
 
 dialog p {
-  font-size: 2em;
+  font-size: 1.5em;
 }
 
 dialog input {
-  font-size: 2em;
+  font-size: 1.5em;
 }
 
 dialog button {
-  font-size: 2em;
+  font-size: 1.5em;
 }
+
+dialog button {
+  font-size: 1.5em;
+  display: inline-block;    /* ensure buttons behave inline */
+  margin: 0 0.5em;          /* space between buttons */
+}
+
+/* Center all buttons inside the dialog */
+dialog {
+  text-align: center;       /* center inline elements like buttons */
+  padding-bottom: 1em;      /* some space below content */
+}
+
 
 #video-column {
   margin: 10px;
