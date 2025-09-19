@@ -293,6 +293,11 @@ let saveDialog = document.getElementById('saveDialog');
 let fileNameInput = saveDialog.querySelector('input');
 let saveButton = document.getElementById('saveButton');
 let saveConfirmButton = document.getElementById('saveConfirmButton');
+let saveCancelButton = document.getElementById('saveCancelButton');
+
+saveCancelButton.addEventListener('click', () => {
+  saveDialog.close();
+});
 
 // Handle the "Save" button (to open the dialog)
 saveButton.addEventListener("click", evt => {
