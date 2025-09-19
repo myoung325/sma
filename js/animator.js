@@ -14,30 +14,38 @@ var animator = animator || {};
   const STATE_RECORD = 2;
 
   class Animator {
-	constructor(video, snapshotCanvas, playCanvas, messageDiv) {
-	  this.video = video;
-	  this.videoStream = null;
-	  this.snapshotCanvas = snapshotCanvas;
-	  this.snapshotContext = snapshotCanvas.getContext('2d');
-	  this.playCanvas = playCanvas;
-	  this.playContext = playCanvas.getContext('2d');
-	  this.playTimer = null;
-	  this._flip = false;
-	  this.messageDiv = messageDiv;
-	  this.playbackSpeed = 24.0;
-	  this.frames = [];
-	  this.frameWebps = [];
-	  this.streamOn = true;
-	  this.name = null;
-	  this.framesInFlight = 0;
-	  this.loadFinishPending = false;
-	  this.audio = null;
-	  this.audioRecorder = null;
-	  this.audioChunks = [];
-	  this.audioBlob = null;
-	  this.zeroPlayTime = 0;
-	  // 👇 NO setDimensions here anymore
-	}
+    constructor(video, snapshotCanvas, playCanvas, messageDiv) {
+      this.video = video;
+      this.videoStream = null;
+      this.snapshotCanvas = snapshotCanvas;
+      this.snapshotContext = snapshotCanvas.getContext('2d');
+      this.playCanvas = playCanvas;
+      this.playContext = playCanvas.getContext('2d');
+      this.playTimer = null;
+      this._flip = false;
+      this.messageDiv = messageDiv;
+      this.playbackSpeed = 24.0;
+      this.frames = [];
+      this.frameWebps = [];
+      this.streamOn = true;
+      this.name = null;
+      this.framesInFlight = 0;
+      this.loadFinishPending = false;
+      this.audio = null;
+      this.audioRecorder = null;
+      this.audioChunks = [];
+      this.audioBlob = null;
+      this.zeroPlayTime = 0;
+
+      // Dimensions
+      this.w = 0;
+      this.h = 0;
+
+      // **Onion skin feature**
+      this.onionSkinEnabled = true;
+
+      // Note: setDimensions is called later, after stream is attached or video metadata loaded
+    }
 
     setPlaybackSpeed(speed) {
       if (speed > 0)
@@ -49,19 +57,19 @@ var animator = animator || {};
       this.messageDiv.innerText = "Cannot connect to camera.";
       return false;
     }
-	
-	setDimensions(w, h) {
-	  this.w = w;
-	  this.h = h;
-	  this.video.width = w;
-	  this.video.height = h;
 
-	  this.snapshotCanvas.width = this.w;
-	  this.snapshotCanvas.height = this.h;
+    setDimensions(w, h) {
+      this.w = w;
+      this.h = h;
+      this.video.width = w;
+      this.video.height = h;
 
-	  this.playCanvas.width = this.w;        // ✅ FIXED
-	  this.playCanvas.height = this.h;       // ✅ FIXED
-	}	
+      this.snapshotCanvas.width = this.w;
+      this.snapshotCanvas.height = this.h;
+
+      this.playCanvas.width = this.w;
+      this.playCanvas.height = this.h;
+    }  
 
     flip() {
       this._flip = !this._flip;
@@ -70,16 +78,16 @@ var animator = animator || {};
     async attachStream() {
       this.messageDiv.innerText = "";
 
-const constraintsList = [
-  { video: { width: 1920, height: 1080, facingMode: "environment" }, audio: false }, // Full HD 16:9
-  { video: { width: 1600, height: 1200, facingMode: "environment" }, audio: false }, // UXGA 4:3
-  { video: { width: 1280, height: 960,  facingMode: "environment" }, audio: false }, // 4:3
-  { video: { width: 1280, height: 720,  facingMode: "environment" }, audio: false }, // HD 16:9
-  { video: { width: 1024, height: 768,  facingMode: "environment" }, audio: false }, // XGA 4:3
-  { video: { width: 800,  height: 600,  facingMode: "environment" }, audio: false }, // SVGA 4:3
-  { video: { width: 640,  height: 480,  facingMode: "environment" }, audio: false }, // VGA 4:3
-  { video: { width: 320,  height: 240,  facingMode: "environment" }, audio: false }, // QVGA fallback
-];
+      const constraintsList = [
+        { video: { width: 1920, height: 1080, facingMode: "environment" }, audio: false },
+        { video: { width: 1600, height: 1200, facingMode: "environment" }, audio: false },
+        { video: { width: 1280, height: 960,  facingMode: "environment" }, audio: false },
+        { video: { width: 1280, height: 720,  facingMode: "environment" }, audio: false },
+        { video: { width: 1024, height: 768,  facingMode: "environment" }, audio: false },
+        { video: { width: 800,  height: 600,  facingMode: "environment" }, audio: false },
+        { video: { width: 640,  height: 480,  facingMode: "environment" }, audio: false },
+        { video: { width: 320,  height: 240,  facingMode: "environment" }, audio: false },
+      ];
 
       let stream = null;
       for (const constraints of constraintsList) {
@@ -112,9 +120,7 @@ const constraintsList = [
 
       this.setDimensions(actualWidth, actualHeight);
 
-      const snapshotCanvas = this.snapshotCanvas;
-      const playCanvas = this.playCanvas;
-      [snapshotCanvas, playCanvas].forEach((canvas) => {
+      [this.snapshotCanvas, this.playCanvas].forEach((canvas) => {
         canvas.style.width = actualWidth + "px";
         canvas.style.height = actualHeight + "px";
       });
@@ -136,9 +142,6 @@ const constraintsList = [
       this.messageDiv.textContent = "";
       return stream;
     }
-
-
-
 
     detachStream() {
       if (!this.video.srcObject)
@@ -167,7 +170,7 @@ const constraintsList = [
         this.video.pause();
         this.detachStream();
         this.streamOn = false;
-        return new Promise((resolve, reject) => { resolve(false) });
+        return new Promise((resolve, reject) => { resolve(false); });
       }
     }
 
@@ -177,8 +180,7 @@ const constraintsList = [
     }
 
     capture() {
-      if (!this.streamOn)
-        return;
+      if (!this.streamOn) return;
       let imageCanvas = document.createElement('canvas');
       imageCanvas.width = this.w;
       imageCanvas.height = this.h;
@@ -192,13 +194,16 @@ const constraintsList = [
       let promise = new Promise(((resolve, reject) => {
         if (self.requestIdleCallback) {
           requestIdleCallback(() => {
-            imageCanvas.toBlob(blob => { resolve(blob) }, 'image/webp', 0.99999);   // increase image quality, last parameter was excluded before
+            imageCanvas.toBlob(blob => { resolve(blob) }, 'image/webp', 0.99999);
           });
         } else {
-          imageCanvas.toBlob(blob => { resolve(blob) }, 'image/webp', 0.99999);   // increase image quality, last parameter was excluded before
+          imageCanvas.toBlob(blob => { resolve(blob) }, 'image/webp', 0.99999);
         }
+        // Draw onion skin if enabled
         this.snapshotContext.clearRect(0, 0, this.w, this.h);
-        this.snapshotContext.drawImage(imageCanvas, 0, 0, this.w, this.h);
+        if (this.onionSkinEnabled) {
+          this.snapshotContext.drawImage(imageCanvas, 0, 0, this.w, this.h);
+        }
       }).bind(this));
       this.frameWebps.push(promise);
     }
@@ -206,10 +211,10 @@ const constraintsList = [
     undoCapture() {
       this.frames.pop();
       this.frameWebps.pop();
-      if (this.frames.length)
-        this.drawFrame(this.frames.length-1, this.snapshotContext);
-      else
-        this.snapshotContext.clearRect(0, 0, this.w, this.h);
+      this.snapshotContext.clearRect(0, 0, this.w, this.h);
+      if (this.onionSkinEnabled && this.frames.length) {
+        this.snapshotContext.drawImage(this.frames[this.frames.length - 1], 0, 0, this.w, this.h);
+      }
     }
 
     frameTimeout() {
@@ -247,8 +252,7 @@ const constraintsList = [
       this.snapshotCanvas.style.visibility = '';
       if (this.streamOn)
         this.video.play();
-      if (cb)
-        cb();
+      if (cb) cb();
     }
 
     playFrame(frameNumber, cb) {
@@ -262,13 +266,14 @@ const constraintsList = [
     }
 
     togglePlay() {
-      if (this.isPlaying())
+      if (this.isPlaying()) {
         return new Promise((resolve, reject) => {
           this.endPlay();
           resolve(true);
         });
-      else
+      } else {
         return this.startPlay();
+      }
     }
 
     clear() {
@@ -288,11 +293,10 @@ const constraintsList = [
 
     loadFinished() {
       this.snapshotContext.clearRect(0, 0, this.w, this.h);
-      if (this.frames.length) {
-        this.snapshotContext.clearRect(0, 0, this.w, this.h);
-        this.snapshotContext.drawImage(this.frames[this.frames.length-1], 0, 0, this.w, this.h);
-        this.startPlay();
+      if (this.onionSkinEnabled && this.frames.length) {
+        this.snapshotContext.drawImage(this.frames[this.frames.length - 1], 0, 0, this.w, this.h);
       }
+      this.startPlay();
     }
 
     addFrameVP8(frameOffset, blob, idx) {
@@ -424,6 +428,15 @@ const constraintsList = [
       if (this.audioRecorder)
         return;
       this.setAudioSrc(null);
+    }
+
+    // --- New method to toggle onion skin
+    toggleOnionSkin() {
+      this.onionSkinEnabled = !this.onionSkinEnabled;
+      this.snapshotContext.clearRect(0, 0, this.w, this.h);
+      if (this.onionSkinEnabled && this.frames.length) {
+        this.snapshotContext.drawImage(this.frames[this.frames.length - 1], 0, 0, this.w, this.h);
+      }
     }
   }
 
