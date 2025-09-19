@@ -19,6 +19,8 @@ var assets = {
     'save': 'images/save72.png',
     'undo': 'images/undo72.png',
     'flip': 'images/flip72.png',
-    'clock': 'images/clock72.png'
+    'clock': 'images/clock72.png',
+    'recordAudio': 'images/recordAudio.png',
+    'clearAudio': 'images/clearAudio.png'
   }
 };

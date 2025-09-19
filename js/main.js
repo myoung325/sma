@@ -63,7 +63,9 @@ document.addEventListener('DOMContentLoaded', evt => {
     'saveButton',
     'loadButton',
     'flipButton',
-    'clockButton'
+    'clockButton',
+	'recordAudioButton',
+	'clearAudioButton'
   ];
 
   buttonIds.forEach(id => {
@@ -305,12 +307,68 @@ if (toggleButton && toggleButton.firstElementChild) {
     fileInput.click();
   });
 
+  let audioStream;
+  let isRecording = false;
+  let recordingIcons = document.querySelectorAll('.recording');
+  let notRecordingIcons = document.querySelectorAll('.not-recording');
+  let countdown = document.getElementById('countdown');
+  let updateRecordingIcons = (showNotRecording, showCountdown, showRecording) => {
+    recordingIcons.forEach(e => { e.style.display = (showRecording ? "" : "none") });
+    notRecordingIcons.forEach(e => { e.style.display = (showNotRecording ? "" : "none") });
+    countdown.style.display = (showCountdown ? "" : "none");
+  };
+  updateRecordingIcons(true, false, false);
+
+  countdown.addEventListener("animationstart", evt => {
+    evt.currentTarget.firstElementChild.innerHTML = "3";
+  });
+  countdown.addEventListener("animationiteration", evt => {
+    let t = evt.currentTarget.firstElementChild;
+    t.innerHTML = (parseInt(t.innerHTML) - 1).toString();
+  });
+  countdown.addEventListener("animationend", evt => {
+    evt.currentTarget.firstElementChild.innerHTML = "";
+    if (isRecording) {
+      progressMarker.style.animationDuration = (an.frames.length / playbackSpeed()) + "s";
+      progressMarker.classList.add("slide-right");
+      startClock();
+      an.recordAudio(audioStream).then(() => {
+        isRecording = false;
+        updateRecordingIcons(true, false, false);
+        audioStream.getAudioTracks()[0].stop();
+        audioStream = null;
+        resetClock();
+      });
+      updateRecordingIcons(false, false, true);
+    } else {
+      updateRecordingIcons(true, false, false);
+    }
+  });
+  
   let recordAudioButton = document.getElementById('recordAudioButton');
   let clearAudioButton = document.getElementById('clearAudioButton');
-  recordAudioButton.addEventListener("click", () => {
-    if (!an.frames.length) return;
-    // existing recording logic...
+
+  recordAudioButton.addEventListener("click", evt => {
+    if (!an.frames.length)
+      return;
+    if (isRecording) {
+      an.endPlay();
+      updateRecordingIcons(true, false, false);
+      isRecording = false;
+    } else if (self.navigator &&
+               navigator.mediaDevices &&
+               navigator.mediaDevices.getUserMedia) {
+      navigator.mediaDevices.getUserMedia({audio: true, video: false})
+          .then(stream => {
+        audioStream = stream;
+        updateRecordingIcons(false, true, false);
+      });
+      isRecording = true;
+    } else {
+      isRecording = false;
+    }
   });
+  
   clearAudioButton.addEventListener("click", an.clearAudio.bind(an));
 
   // Camera setup & attachment
