@@ -1,14 +1,21 @@
+/* ============================
+   Flexbox utility classes
+   ============================ */
 .hflex {
   display: flex;
-  flex-direction: row;
+  flex-direction: row; /* horizontal layout */
 }
 
 .vflex {
   display: flex;
-  flex-direction: column;
+  flex-direction: column; /* vertical layout */
 }
 
-html, body {
+/* ============================
+   Base document styles
+   ============================ */
+html,
+body {
   margin: 0;
   padding: 0;
   overflow: hidden; /* Prevent scrollbars */
@@ -16,6 +23,7 @@ html, body {
   width: 100%;
 }
 
+/* Container that scales to fit the viewport */
 #scalable-wrapper {
   position: fixed;
   top: 0;
@@ -23,13 +31,9 @@ html, body {
   transform-origin: top left;
 }
 
-/*
-#camera-info {
-  font-size: 24px;
-  font-family: sans-serif;
-}
-*/
-
+/* ============================
+   Camera info panel
+   ============================ */
 #camera-info {
   display: flex;
   flex-direction: column;
@@ -39,59 +43,50 @@ html, body {
   font-family: sans-serif;
 }
 
-.button-container {
-  display: flex;
-  align-items: center;      /* This centers all contents vertically */
-}
-
-dialog p {
-  font-size: 1.5em;
-}
-
-dialog input {
-  font-size: 1.5em;
-}
-
+/* ============================
+   Dialog styles
+   ============================ */
+dialog p,
+dialog input,
 dialog button {
   font-size: 1.5em;
 }
 
 dialog button {
-  font-size: 1.5em;
-  display: inline-block;    /* ensure buttons behave inline */
-  margin: 0 0.5em;          /* space between buttons */
+  display: inline-block; /* keep buttons inline */
+  margin: 0 0.5em;       /* spacing between buttons */
 }
 
-/* Center all buttons inside the dialog */
 dialog {
-  text-align: center;       /* center inline elements like buttons */
-  padding-bottom: 1em;      /* some space below content */
+  text-align: center;    /* center-align inline content */
+  padding-bottom: 1em;   /* space below dialog content */
 }
 
-
+/* ============================
+   Video & countdown overlay
+   ============================ */
 #video-column {
   margin: 10px;
-  flex: 0 0 auto; /* prevent shrinking */
-  will-change: transform;
+  flex: 0 0 auto;          /* prevent shrinking */
+  will-change: transform;  /* optimization for animations */
 }
 
 #video-container {
   position: relative;
-  /* Width & height will be set dynamically by JS to match video resolution */
+  /* Width & height are set dynamically by JS to match camera resolution */
 }
 
-
-
+/* Countdown overlay SVG positioned above the video */
 #countdown {
-  position: absolute;       /* position over the video */
-  top: -70%;                /* vertical center */
-  left: 0%;               /* horizontal center */
-  transform: translate(-50%, -50%); /* center the SVG exactly */
-  width: 100px;            /* or adjust as needed */
-  height: 100px;           /* or bigger if needed */
-  overflow: visible;       /* allow the big text not to get clipped */
-  pointer-events: none;    /* clicks go through */
-  z-index: 10;             /* above video */
+  position: absolute;
+  top: -70%;                    /* vertically centered */
+  left: 0%;                     /* horizontally centered */
+  transform: translate(-50%, -50%);
+  width: 100px;
+  height: 100px;
+  overflow: visible;             /* ensure large text isn’t clipped */
+  pointer-events: none;          /* let clicks pass through */
+  z-index: 10;                   /* above video */
 }
 
 #countdown text {
@@ -102,34 +97,26 @@ dialog {
   user-select: none;
 }
 
-
-
-
-/* Remove fixed width/height so video & canvases resize dynamically */
-/*
-#video-container > * {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-}
-*/
+/* Resize video and canvases dynamically */
 #video-container > * {
   width: 100%;
   height: auto;
   max-width: 100%;
 }
 
+/* Video fills the container */
 video {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover; /* keep aspect ratio and cover container */
+  object-fit: cover; /* maintain aspect ratio while covering */
 }
 
+/* ============================
+   Video overlay: messages
+   ============================ */
 #message-container {
   display: flex;
   justify-content: center;
@@ -141,32 +128,19 @@ video {
   z-index: 1;
 }
 
-/*
+/* ============================
+   Timeline / progress indicator
+   ============================ */
 #progress-container {
-  position: absolute;
-  bottom: 5px;
-  left: 0;
-  overflow: hidden;
-  width: 100%;
-  max-width: 100%;
-  height: 10px;
-  z-index: 10;
+  display: none !important; /* disabled */
 }
-*/
-
-/* disable the broken progress container (commented out original code above */
-#progress-container {
-  display: none !important;
-}
-
-
 
 #progress-marker {
   display: block;
-  width: 100%; /* use full width */
+  width: 100%;
   height: 10px;
   color: red;
-  transform: translateX(-100%); /* animate offscreen initially */
+  transform: translateX(-100%); /* initially hidden */
   transition: transform 0.3s ease;
 }
 
@@ -180,6 +154,9 @@ video {
   fill: currentColor;
 }
 
+/* ============================
+   Playback speed control
+   ============================ */
 #speed-container {
   display: flex;
   flex-flow: row nowrap;
@@ -198,45 +175,43 @@ video {
   flex: 99 0 auto;
 }
 
-/*
+/* ============================
+   Thumbnails strip
+   ============================ */
 #thumbnail-container {
   display: flex;
   overflow-x: auto;
   max-width: 100%;
   margin-top: 10px;
-}
-*/
-
-#thumbnail-container {
-  display: flex;
-  overflow-x: auto;
-  max-width: 100%;
-  margin-top: 10px;
-  min-height: 100px; /* 👈 Ensures space is reserved */
+  min-height: 100px; /* Reserve space even when empty */
 }
 
 #thumbnail-container > canvas {
   margin: 0 5px;
-  height: 90px; /* fixed height for thumbnails */
+  height: 90px; /* Fixed thumbnail height */
   width: auto;
 }
 
+/* Cursor overlay for timeline */
 #thumbnail-cursor-container {
   position: absolute;
   left: 0;
   top: 0;
 }
 
+/* ============================
+   Buttons and controls
+   ============================ */
 #control-column {
   flex: 1 1 auto;
 }
 
 #button-wrapper {
   display: flex;
-  justify-content: center; /* centers the group of buttons + camera-info */
-  align-items: center;     /* vertically centers the items */
+  justify-content: center; /* center buttons and camera info */
+  align-items: center;     /* vertical centering */
   flex-wrap: nowrap;
-  gap: 20px;               /* space between buttons and camera-info */
+  gap: 20px;
 }
 
 #button-container {
@@ -247,100 +222,10 @@ video {
   margin-bottom: 15px;
 }
 
-/*
-#button-container {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 10px;
-  margin-bottom: 15px;
-}
-*/
-
-body {
-  display: flex;
-  justify-content: center; /* centers horizontally */
-  align-items: flex-start; /* aligns items at the top vertically */
-  min-height: 100vh;       /* ensure body fills viewport height */
-  margin: 0;               /* remove default margins */
-  padding: 20px;           /* optional: some padding around */
-  background: #f0f0f0;     /* optional: subtle background */
-  box-sizing: border-box;
-}
-
-
-/*#top-container {*/
-/*  max-width: 1920px; /* allow large video widths */
-/*  width: 100%;       /* responsive */
-/*}*/
-
-#top-container {
-  display: flex;
-  justify-content: center;
-}
-
-#stream {
-  position: absolute;
-  z-index: 1;
-  border: 1px solid black;
-}
-
-#snapshot-canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 2;
-  opacity: 0.5;
-  width: 100%;
-  height: 100%;
-  pointer-events: none; /* so it doesn't block video */
-}
-
-/*
-#play-canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-*/
-
-#play-canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  pointer-events: none;
-  /* REMOVE these:
-  width: 100%;
-  height: 100%;
-  */
-}
-
-/*
+/* Button base style */
 .button72 {
-  display: flex;
-  flex-direction: column;
-  background-color: #b0c4de;
-  border-radius: 15px;
-  border: 2px solid transparent;
-  padding: 2px;
-  margin: 2px;
-  width: 92px;
-  min-height: 92px;
-  justify-content: space-between;
-  cursor: pointer;
-  user-select: none;
-  overflow: hidden;
   position: relative;
-}
-*/
-
-.button72 {
-  position: relative; /* positioning context */
-  overflow: hidden;   /* prevent children from expanding container */
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   background-color: #b0c4de;
@@ -355,11 +240,13 @@ body {
   user-select: none;
 }
 
+/* Button pressed state */
 .button72.pressed {
   background-color: #4682b4;
   border-color: #315f91;
 }
 
+/* Icon inside button */
 .button72 > .iconContainer {
   will-change: transform;
   width: 48px;
@@ -371,9 +258,66 @@ body {
   width: 58px;
   height: 58px;
   align-self: center;
-  /* transform: translateX(1px); /* Adjust left/right manually */
 }
 
+/* Label under button icons */
+.button72 > .buttonLabel {
+  font: normal normal normal 18px/normal Arial;
+  text-align: center;
+  width: 100%;
+  user-select: none;
+}
+
+/* ============================
+   Layout and body
+   ============================ */
+body {
+  display: flex;
+  justify-content: center; /* horizontal centering */
+  align-items: flex-start; /* stick to top vertically */
+  min-height: 100vh;
+  margin: 0;
+  padding: 20px;
+  background: #f0f0f0;     /* subtle background color */
+  box-sizing: border-box;
+}
+
+#top-container {
+  display: flex;
+  justify-content: center;
+}
+
+/* ============================
+   Canvases & overlays
+   ============================ */
+#stream {
+  position: absolute;
+  z-index: 1;
+  border: 1px solid black;
+}
+
+/* Semi-transparent overlay for onion skinning */
+#snapshot-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  opacity: 0.5;
+  width: 100%;
+  height: 100%;
+  pointer-events: none; /* doesn’t block video interaction */
+}
+
+#play-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none; /* purely visual */
+}
+
+/* ============================
+   SVGs and icons
+   ============================ */
 #svg-defs {
   width: 0;
   height: 0;
@@ -390,13 +334,7 @@ body {
   transform: translateX(17px);
 }
 
-.button72 > .buttonLabel {
-  font: normal normal normal 18px/normal Arial;
-  text-align: center;
-  width: 100%;
-  user-select: none;
-}
-
+/* Install button for PWA */
 #installButton {
   position: fixed;
   bottom: 20px;
@@ -415,19 +353,12 @@ body {
   user-select: none;
 }
 
+/* ============================
+   Clock overlay
+   ============================ */
 .center-circle {
   cx: calc(var(--width) / 2);
   cy: calc(var(--height) / 2);
-}
-
-pre,
-span {
-  font: normal normal normal 24px/normal Arial;
-  user-select: text;
-}
-
-.not-recording {
-  color: black;
 }
 
 #clockContainer {
@@ -446,6 +377,14 @@ span {
   position: absolute;
 }
 
+/* ============================
+   Animations
+   ============================ */
+.not-recording {
+  color: black;
+}
+
+/* Ripple animation for recording state */
 .ripple-decay {
   will-change: transform;
   animation-duration: 1.5s;
@@ -464,6 +403,7 @@ span {
   }
 }
 
+/* Countdown shrinking effect */
 .recede-decay {
   will-change: transform;
   animation-duration: 1s;
@@ -483,6 +423,7 @@ span {
   }
 }
 
+/* Timeline slide animation */
 .slide-right {
   animation-duration: 5s;
   animation-name: slide-right;
