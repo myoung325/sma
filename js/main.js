@@ -8,10 +8,14 @@
 
 var main = main || {};
 
+/**
+ * Scale the content inside #scalable-wrapper so that it fits the browser window
+ * while maintaining its aspect ratio.
+ */
 function scaleToFitWindow() {
   const wrapper = document.getElementById('scalable-wrapper');
 
-  // Temporarily remove transform to measure natural size
+  // Temporarily disable transform to measure natural size
   wrapper.style.transform = 'none';
 
   const contentWidth = wrapper.scrollWidth;
@@ -21,13 +25,19 @@ function scaleToFitWindow() {
   const scaleY = window.innerHeight / contentHeight;
   const scale = Math.min(scaleX, scaleY);
 
+  // Center horizontally, top-align vertically
   const translateX = (window.innerWidth / 2) - (contentWidth * scale / 2);
-  const translateY = 0; // or center vertically if desired
+  const translateY = 0;
 
   wrapper.style.transformOrigin = 'top left';
-  wrapper.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+  wrapper.style.transform =
+    `translate(${translateX}px, ${translateY}px) scale(${scale})`;
 }
 
+/**
+ * Reads the resolution of the active camera stream
+ * and updates the UI with the resolution info.
+ */
 function updateCameraResolution(videoElement) {
   const stream = videoElement.srcObject;
   if (!stream) return;
@@ -44,15 +54,21 @@ function updateCameraResolution(videoElement) {
     resolutionDisplay.textContent = `${width}×${height}`;
   }
 
+  // Re-scale content after resolution update
   requestAnimationFrame(scaleToFitWindow);
 }
 
+// Rescale content whenever the window is resized
 window.addEventListener('resize', () => {
   requestAnimationFrame(scaleToFitWindow);
 });
 
+// Perform initial scaling on load
 window.addEventListener('load', scaleToFitWindow);
 
+/**
+ * Once DOM is ready, initialize button icons from assets/images.
+ */
 document.addEventListener('DOMContentLoaded', evt => {
   const buttonIds = [
     'toggleButton',
@@ -64,8 +80,8 @@ document.addEventListener('DOMContentLoaded', evt => {
     'loadButton',
     'flipButton',
     'clockButton',
-	'recordAudioButton',
-	'clearAudioButton'
+    'recordAudioButton',
+    'clearAudioButton'
   ];
 
   buttonIds.forEach(id => {
@@ -90,323 +106,276 @@ document.addEventListener('DOMContentLoaded', evt => {
   });
 });
 
+/**
+ * Once the window is fully loaded, initialize the Animator
+ * and wire up UI event handlers.
+ */
 window.addEventListener('load', evt => {
+  // --- Animator setup ---
   let video = document.getElementById('video');
   let snapshotCanvas = document.getElementById('snapshot-canvas');
   let playCanvas = document.getElementById('play-canvas');
   let videoMessage = document.getElementById('video-message');
   let an = new animator.Animator(video, snapshotCanvas, playCanvas, videoMessage);
-
   main.animator = an;
 
-
+  // --- Playback speed selector ---
   let playbackSpeedSelector = document.getElementById('playbackSpeed');
   let playbackSpeed = () => Number(playbackSpeedSelector.value);
   let fps = document.getElementById('fps');
-  playbackSpeedSelector.addEventListener("input", evt => {
+
+  playbackSpeedSelector.addEventListener('input', evt => {
     an.setPlaybackSpeed(playbackSpeed());
     fps.innerText = Math.round(playbackSpeed());
   });
   an.setPlaybackSpeed(playbackSpeed());
 
+  // --- Capture & Undo buttons ---
   let captureButton = document.getElementById('captureButton');
   let undoButton = document.getElementById('undoButton');
 
+  // Onion skin toggle button
   let toggleButton = document.getElementById('toggleButton');
-  toggleButton.addEventListener("click", evt => {
-    // Toggle onion skin (overlay of last frame) instead of video preview
+  toggleButton.addEventListener('click', evt => {
     an.toggleOnionSkin();
-    // Optionally, update button image/icon to reflect state:
-    if (an.onionSkinEnabled) {
-      toggleButton.firstChild.src = assets.images['on'];  // assuming 'on' image exists
-    } else {
-      toggleButton.firstChild.src = assets.images['off']; // assuming 'off' image exists
-    }
+    toggleButton.firstChild.src = an.onionSkinEnabled
+      ? assets.images['on']
+      : assets.images['off'];
   });
 
+  if (toggleButton && toggleButton.firstElementChild) {
+    toggleButton.firstElementChild.src = an.onionSkinEnabled
+      ? assets.images['on']
+      : assets.images['off'];
+  }
 
-
-if (toggleButton && toggleButton.firstElementChild) {
-  toggleButton.firstElementChild.src = an.onionSkinEnabled
-    ? assets.images['on']
-    : assets.images['off'];
-}
-
-
-
+  // Helper for visual feedback (button press effect)
   let pressButton = button => {
     button.classList.add('pressed');
     setTimeout(() => { button.classList.remove('pressed'); }, 250);
   };
 
+  // Thumbnails for captured frames
   let thumbnailContainer = document.getElementById('thumbnail-container');
   let thumbnailWidth = 96;
   let thumbnailHeight = 72;
-  captureButton.addEventListener("click", evt => {
+
+  captureButton.addEventListener('click', evt => {
     an.capture();
+
     let thumbnail = document.createElement('canvas');
-    let w = thumbnailWidth;
-    let h = thumbnailHeight;
     thumbnail.width = thumbnailWidth;
     thumbnail.height = thumbnailHeight;
     thumbnail.getContext('2d', { alpha: false }).drawImage(
-      an.frames[an.frames.length - 1], 0, 0, thumbnailWidth, thumbnailHeight);
+      an.frames[an.frames.length - 1], 0, 0, thumbnailWidth, thumbnailHeight
+    );
     thumbnailContainer.appendChild(thumbnail);
+
     pressButton(captureButton);
   });
 
-  undoButton.addEventListener("click", evt => {
+  undoButton.addEventListener('click', evt => {
     an.undoCapture();
-    if (thumbnailContainer.lastElementChild)
+    if (thumbnailContainer.lastElementChild) {
       thumbnailContainer.removeChild(thumbnailContainer.lastElementChild);
+    }
     pressButton(undoButton);
   });
 
-  let progressMarker = document.getElementById("progress-marker");
-  progressMarker.addEventListener("animationend", () => {
-    progressMarker.classList.toggle("slide-right");
-    progressMarker.style.transform = "translateX(0px)";
-    setTimeout(() => {
-      progressMarker.style.transform = "";
-    }, 1000);
+  // --- Progress marker animation ---
+  let progressMarker = document.getElementById('progress-marker');
+  progressMarker.addEventListener('animationend', () => {
+    progressMarker.classList.toggle('slide-right');
+    progressMarker.style.transform = 'translateX(0px)';
+    setTimeout(() => { progressMarker.style.transform = ''; }, 1000);
   });
 
+  // --- Flip video orientation ---
   let flipButton = document.getElementById('flipButton');
-  flipButton.addEventListener("click", evt => {
+  flipButton.addEventListener('click', evt => {
     let style = video.attributeStyleMap;
-    let transform = style.get("transform");
+    let transform = style.get('transform');
     if (!transform) {
       transform = new CSSTransformValue([new CSSRotate(CSS.deg(0))]);
     }
     let angle = transform[0].angle.value;
     angle = (angle + 180) % 360;
     transform[0] = new CSSRotate(CSS.deg(angle));
-    style.set("transform", transform);
+    style.set('transform', transform);
+
     an.flip();
   });
 
+  // --- Clock animation (for playback timing visualization) ---
   let clockContainer = document.getElementById('clockContainer');
-  let clockHand = document.getElementById("clock-hand");
-
+  let clockHand = document.getElementById('clock-hand');
   let clockNumRotations = 1000;
   let clockZeroTime = 0;
 
   let startClock = (t, skew) => {
-    skew = (skew ? Number(skew) : 0);
+    skew = skew ? Number(skew) : 0;
     clockZeroTime = t - skew;
     let angle = 360 * clockNumRotations;
     let duration = clockNumRotations - (skew / 1000);
-    clockHand.style.transition = "transform " + String(duration) + "s linear";
-    clockHand.style.transform = "rotate(" + String(angle) + "deg)";
+    clockHand.style.transition = `transform ${String(duration)}s linear`;
+    clockHand.style.transform = `rotate(${String(angle)}deg)`;
   };
 
   let resetClock = () => {
-    clockHand.style.transition = "";
-    clockHand.style.transform = "";
+    clockHand.style.transition = '';
+    clockHand.style.transform = '';
   };
 
-  clockHand.addEventListener("transitionend", evt => {
+  clockHand.addEventListener('transitionend', evt => {
     resetClock();
-    requestAnimationFrame(() => { requestAnimationFrame(() => {
-      let t = performance.now();
-      let skew = (t - clockZeroTime) % 1000;
-      startClock(t, skew);
-    }) });
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        let t = performance.now();
+        let skew = (t - clockZeroTime) % 1000;
+        startClock(t, skew);
+      });
+    });
   });
 
   let clockButton = document.getElementById('clockButton');
-  clockButton.addEventListener("click", evt => {
-    if (clockContainer.style.display == "none") {
-      clockContainer.style.display = "";
-    } else {
-      clockContainer.style.display = "none";
-    }
+  clockButton.addEventListener('click', evt => {
+    clockContainer.style.display =
+      clockContainer.style.display == 'none' ? '' : 'none';
   });
 
-  let playButton = document.getElementById('playButton');
-  playButton.addEventListener("click", evt => {
+  // --- Play button ---
+  playButton.addEventListener('click', evt => {
     let p = an.togglePlay();
     if (an.isPlaying) {
-      progressMarker.style.animationDuration = (an.frames.length / playbackSpeed()) + "s";
-      //progressMarker.classList.add("slide-right");   // disable progress marker
+      progressMarker.style.animationDuration =
+        (an.frames.length / playbackSpeed()) + 's';
       startClock(performance.now(), 0);
       p.then(resetClock);
     } else {
-      //progressMarker.classList.remove("slide-right");   // disable progress marker
       resetClock();
     }
   });
 
+  // --- Clear animation confirm dialog ---
   let clearConfirmDialog = document.getElementById('clearConfirmDialog');
   let clearButton = document.getElementById('clearButton');
-  clearButton.addEventListener("click", evt => {
+  clearButton.addEventListener('click', evt => {
     if (!an.frames.length) return;
     clearConfirmDialog.showModal();
   });
 
   let clearConfirmButton = document.getElementById('clearConfirmButton');
-  clearConfirmButton.addEventListener("click", evt => {
+  clearConfirmButton.addEventListener('click', evt => {
     an.clear();
-    thumbnailContainer.innerHTML = "";
+    thumbnailContainer.innerHTML = '';
     clearConfirmDialog.close();
   });
 
   let clearCancelButton = document.getElementById('clearCancelButton');
-  clearCancelButton.addEventListener("click", evt => {
+  clearCancelButton.addEventListener('click', evt => {
     clearConfirmDialog.close();
   });
 
-/*
+  // --- Save dialog ---
   let saveDialog = document.getElementById('saveDialog');
   let fileNameInput = saveDialog.querySelector('input');
   let saveButton = document.getElementById('saveButton');
+  let saveConfirmButton = document.getElementById('saveConfirmButton');
+  let saveCancelButton = document.getElementById('saveCancelButton');
 
-  saveButton.addEventListener("click", evt => {
+  saveCancelButton.addEventListener('click', () => {
+    saveDialog.close();
+  });
+
+  saveButton.addEventListener('click', evt => {
     if (!an.frames.length) return;
     if (an.name) fileNameInput.value = an.name;
-    let saveConfirmButton = document.getElementById('saveConfirmButton');
-    saveConfirmButton.addEventListener("click", () => {
-      let value = fileNameInput.value;
-      if (!value.length) value = 'StopMotion';
-      value = value.replace(/\s+/g, '_');
-      value = value.replace(/[^\w\-\.]+/g, '');
-      if (value.endsWith('.mng')) value = value.substring(0, value.length - 4);
-      if (!value.endsWith('.webm')) value += '.webm';
-      saveDialog.close();
-      let topContainer = document.getElementById('top-container');
-      topContainer.style.opacity = 0.5;
-      topContainer.addEventListener('click', e => e.stopPropagation(), true);
-      an.save(value).then(() => {
-        topContainer.style.opacity = null;
-        topContainer.removeEventListener('click', e => e.stopPropagation(), true);
-      }).catch(err => {
-        console.log(err);
-        topContainer.style.opacity = null;
-        topContainer.removeEventListener('click', e => e.stopPropagation(), true);
-      });
-    });
     saveDialog.showModal();
   });
-*/
 
-let saveDialog = document.getElementById('saveDialog');
-let fileNameInput = saveDialog.querySelector('input');
-let saveButton = document.getElementById('saveButton');
-let saveConfirmButton = document.getElementById('saveConfirmButton');
-let saveCancelButton = document.getElementById('saveCancelButton');
+  const stopPropagationHandler = e => e.stopPropagation();
 
-saveCancelButton.addEventListener('click', () => {
-  saveDialog.close();
-});
+  saveConfirmButton.addEventListener('click', () => {
+    let value = fileNameInput.value;
+    if (!value.length) value = 'StopMotion';
+    value = value.replace(/\s+/g, '_');
+    value = value.replace(/[^\w\-\.]+/g, '');
+    if (value.endsWith('.mng')) value = value.substring(0, value.length - 4);
+    if (!value.endsWith('.webm')) value += '.webm';
 
-// Handle the "Save" button (to open the dialog)
-saveButton.addEventListener("click", evt => {
-  if (!an.frames.length) return;
-  if (an.name) fileNameInput.value = an.name;
-  saveDialog.showModal();
-});
+    saveDialog.close();
 
-const stopPropagationHandler = e => e.stopPropagation();
+    let topContainer = document.getElementById('top-container');
+    topContainer.style.opacity = 0.5;
+    topContainer.addEventListener('click', stopPropagationHandler, true);
 
-saveConfirmButton.addEventListener("click", () => {
-  let value = fileNameInput.value;
-  if (!value.length) value = 'StopMotion';
-  value = value.replace(/\s+/g, '_');
-  value = value.replace(/[^\w\-\.]+/g, '');
-  if (value.endsWith('.mng')) value = value.substring(0, value.length - 4);
-  if (!value.endsWith('.webm')) value += '.webm';
-  saveDialog.close();
-
-  let topContainer = document.getElementById('top-container');
-  topContainer.style.opacity = 0.5;
-  topContainer.addEventListener('click', stopPropagationHandler, true);
-
-  an.save(value).then(() => {
-    topContainer.style.opacity = null;
-    topContainer.removeEventListener('click', stopPropagationHandler, true);
-  }).catch(err => {
-    console.log(err);
-    topContainer.style.opacity = null;
-    topContainer.removeEventListener('click', stopPropagationHandler, true);
+    an.save(value).then(() => {
+      topContainer.style.opacity = null;
+      topContainer.removeEventListener('click', stopPropagationHandler, true);
+    }).catch(err => {
+      console.log(err);
+      topContainer.style.opacity = null;
+      topContainer.removeEventListener('click', stopPropagationHandler, true);
+    });
   });
-});
 
-
-/*
+  // --- Load dialog ---
   let loadButton = document.getElementById('loadButton');
-  loadButton.addEventListener("click", evt => {
+  loadButton.addEventListener('click', evt => {
     let fileInput = document.createElement('input');
-    fileInput.type = "file";
-    fileInput.addEventListener("change", evt => {
+    fileInput.type = 'file';
+
+    fileInput.addEventListener('change', evt => {
       if (evt.target.files[0]) {
         let topContainer = document.getElementById('top-container');
         topContainer.style.opacity = 0.5;
-        topContainer.addEventListener('click', e => e.stopPropagation(), true);
+        topContainer.addEventListener('click', stopPropagationHandler, true);
+
         an.load(evt.target.files[0], () => {
           topContainer.style.opacity = null;
-          topContainer.removeEventListener('click', e => e.stopPropagation(), true);
+          topContainer.removeEventListener('click', stopPropagationHandler, true);
         }, frameRate => {
           playbackSpeedSelector.value = frameRate;
         });
       }
     }, false);
+
     fileInput.click();
   });
-*/
 
-//const stopPropagationHandler = e => e.stopPropagation();
-
-let loadButton = document.getElementById('loadButton');
-loadButton.addEventListener("click", evt => {
-  let fileInput = document.createElement('input');
-  fileInput.type = "file";
-
-  fileInput.addEventListener("change", evt => {
-    if (evt.target.files[0]) {
-      let topContainer = document.getElementById('top-container');
-      topContainer.style.opacity = 0.5;
-
-      // Use the same stable handler here:
-      topContainer.addEventListener('click', stopPropagationHandler, true);
-
-      an.load(evt.target.files[0], () => {
-        topContainer.style.opacity = null;
-        topContainer.removeEventListener('click', stopPropagationHandler, true);
-      }, frameRate => {
-        playbackSpeedSelector.value = frameRate;
-      });
-    }
-  }, false);
-
-  fileInput.click();
-});
-
-
-
+  // --- Audio recording UI ---
   let audioStream;
   let isRecording = false;
   let recordingIcons = document.querySelectorAll('.recording');
   let notRecordingIcons = document.querySelectorAll('.not-recording');
   let countdown = document.getElementById('countdown');
-  let updateRecordingIcons = (showNotRecording, showCountdown, showRecording) => {
-    recordingIcons.forEach(e => { e.style.display = (showRecording ? "" : "none") });
-    notRecordingIcons.forEach(e => { e.style.display = (showNotRecording ? "" : "none") });
-    countdown.style.display = (showCountdown ? "" : "none");
-  };
+
+  let updateRecordingIcons =
+    (showNotRecording, showCountdown, showRecording) => {
+      recordingIcons.forEach(e => {
+        e.style.display = showRecording ? '' : 'none';
+      });
+      notRecordingIcons.forEach(e => {
+        e.style.display = showNotRecording ? '' : 'none';
+      });
+      countdown.style.display = showCountdown ? '' : 'none';
+    };
+
   updateRecordingIcons(true, false, false);
 
-  countdown.addEventListener("animationstart", evt => {
-    evt.currentTarget.firstElementChild.innerHTML = "3";
+  countdown.addEventListener('animationstart', evt => {
+    evt.currentTarget.firstElementChild.innerHTML = '3';
   });
-  countdown.addEventListener("animationiteration", evt => {
+  countdown.addEventListener('animationiteration', evt => {
     let t = evt.currentTarget.firstElementChild;
     t.innerHTML = (parseInt(t.innerHTML) - 1).toString();
   });
-  countdown.addEventListener("animationend", evt => {
-    evt.currentTarget.firstElementChild.innerHTML = "";
+  countdown.addEventListener('animationend', evt => {
+    evt.currentTarget.firstElementChild.innerHTML = '';
     if (isRecording) {
-      progressMarker.style.animationDuration = (an.frames.length / playbackSpeed()) + "s";
-      progressMarker.classList.add("slide-right");
+      progressMarker.style.animationDuration =
+        (an.frames.length / playbackSpeed()) + 's';
+      progressMarker.classList.add('slide-right');
       startClock();
       an.recordAudio(audioStream).then(() => {
         isRecording = false;
@@ -420,13 +389,13 @@ loadButton.addEventListener("click", evt => {
       updateRecordingIcons(true, false, false);
     }
   });
-  
+
   let recordAudioButton = document.getElementById('recordAudioButton');
   let clearAudioButton = document.getElementById('clearAudioButton');
 
-  recordAudioButton.addEventListener("click", evt => {
-    if (!an.frames.length)
-      return;
+  recordAudioButton.addEventListener('click', evt => {
+    if (!an.frames.length) return;
+
     if (isRecording) {
       an.endPlay();
       updateRecordingIcons(true, false, false);
@@ -434,20 +403,20 @@ loadButton.addEventListener("click", evt => {
     } else if (self.navigator &&
                navigator.mediaDevices &&
                navigator.mediaDevices.getUserMedia) {
-      navigator.mediaDevices.getUserMedia({audio: true, video: false})
-          .then(stream => {
-        audioStream = stream;
-        updateRecordingIcons(false, true, false);
-      });
+      navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+        .then(stream => {
+          audioStream = stream;
+          updateRecordingIcons(false, true, false);
+        });
       isRecording = true;
     } else {
       isRecording = false;
     }
   });
-  
-  clearAudioButton.addEventListener("click", an.clearAudio.bind(an));
 
-  // Camera setup & attachment
+  clearAudioButton.addEventListener('click', an.clearAudio.bind(an));
+
+  // --- Camera selection and setup ---
   let setUpCameraSelectAndAttach = cameras => {
     if (!cameras || cameras.length < 2) {
       an.attachStream().then(() => {
@@ -469,8 +438,7 @@ loadButton.addEventListener("click", evt => {
       cameraOption.value = cameras[i].deviceId;
       cameraOption.innerText = 'Camera ' + (i + 1);
       cameraSelect.appendChild(cameraOption);
-      if (i === 0)
-        cameraOption.selected = true;
+      if (i === 0) cameraOption.selected = true;
     }
 
     cameraSelect.onchange = e => {

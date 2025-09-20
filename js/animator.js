@@ -9,12 +9,25 @@
 var animator = animator || {};
 
 (() => {
-  const STATE_IDLE = 0;
-  const STATE_PLAY = 1;
+  // Animator states (for possible extension/use elsewhere)
+  const STATE_IDLE   = 0;
+  const STATE_PLAY   = 1;
   const STATE_RECORD = 2;
 
+  /**
+   * Animator class for stop-motion animation.
+   * Handles video stream input, frame capture, onion skinning,
+   * playback, saving, and audio recording.
+   */
   class Animator {
+    /**
+     * @param {HTMLVideoElement} video - Video element for live camera feed.
+     * @param {HTMLCanvasElement} snapshotCanvas - Canvas used for onion skin preview.
+     * @param {HTMLCanvasElement} playCanvas - Canvas used for playback.
+     * @param {HTMLElement} messageDiv - Element for displaying messages to the user.
+     */
     constructor(video, snapshotCanvas, playCanvas, messageDiv) {
+      // Video stream and playback components
       this.video = video;
       this.videoStream = null;
       this.snapshotCanvas = snapshotCanvas;
@@ -22,62 +35,82 @@ var animator = animator || {};
       this.playCanvas = playCanvas;
       this.playContext = playCanvas.getContext('2d');
       this.playTimer = null;
-      this._flip = false;
+
+      // Control flags
+      this._flip = false;             // Whether video capture is flipped
+      this.streamOn = true;           // Camera stream active flag
+      this.onionSkinEnabled = true;   // Onion skin overlay enabled
+
+      // UI and metadata
       this.messageDiv = messageDiv;
-      this.playbackSpeed = 24.0;
-      this.frames = [];
-      this.frameWebps = [];
-      this.streamOn = true;
+      this.playbackSpeed = 24.0;      // Frames per second
       this.name = null;
+
+      // Frame storage
+      this.frames = [];       // Array of captured frame canvases
+      this.frameWebps = [];   // Array of promises for compressed frame blobs
+
+      // Dimensions (set later when video metadata is available)
+      this.w = 0;
+      this.h = 0;
+
+      // Frame loading management
       this.framesInFlight = 0;
       this.loadFinishPending = false;
+
+      // Audio handling
       this.audio = null;
       this.audioRecorder = null;
       this.audioChunks = [];
       this.audioBlob = null;
+
+      // Playback synchronization
       this.zeroPlayTime = 0;
-
-      // Dimensions
-      this.w = 0;
-      this.h = 0;
-
-      // **Onion skin feature**
-      this.onionSkinEnabled = true;
-
-      // Note: setDimensions is called later, after stream is attached or video metadata loaded
     }
 
+    /** Adjust playback speed (must be > 0). */
     setPlaybackSpeed(speed) {
-      if (speed > 0)
-        this.playbackSpeed = speed;
+      if (speed > 0) this.playbackSpeed = speed;
     }
 
+    /** Handle error if video stream cannot be played. */
     videoCannotPlayHandler(e) {
       console.log('navigator.mediaDevices.getUserMedia error: ', e);
       this.messageDiv.innerText = "Cannot connect to camera.";
       return false;
     }
 
+    /**
+     * Set video and canvas dimensions.
+     * Called after stream attachment or video metadata is loaded.
+     */
     setDimensions(w, h) {
       this.w = w;
       this.h = h;
+
       this.video.width = w;
       this.video.height = h;
 
-      this.snapshotCanvas.width = this.w;
-      this.snapshotCanvas.height = this.h;
+      this.snapshotCanvas.width = w;
+      this.snapshotCanvas.height = h;
 
-      this.playCanvas.width = this.w;
-      this.playCanvas.height = this.h;
-    }  
+      this.playCanvas.width = w;
+      this.playCanvas.height = h;
+    }
 
+    /** Toggle capture flip (180° rotation). */
     flip() {
       this._flip = !this._flip;
     }
 
+    /**
+     * Attempt to attach a video stream with progressively smaller resolutions
+     * until successful. Returns the acquired stream or null if failed.
+     */
     async attachStream() {
       this.messageDiv.innerText = "";
 
+      // Try different camera resolutions, largest first
       const constraintsList = [
         { video: { width: 1920, height: 1080, facingMode: "environment" }, audio: false },
         { video: { width: 1600, height: 1200, facingMode: "environment" }, audio: false },
@@ -105,21 +138,23 @@ var animator = animator || {};
         return null;
       }
 
+      // Attach the stream to the video element
       this.video.srcObject = stream;
       this.videoStream = stream;
       this.streamOn = true;
 
+      // Wait for metadata (resolution info)
       await new Promise((resolve) => {
         this.video.onloadedmetadata = () => resolve();
       });
 
       const actualWidth = this.video.videoWidth;
       const actualHeight = this.video.videoHeight;
-
       console.log(`Actual video dimensions: ${actualWidth}x${actualHeight}`);
 
       this.setDimensions(actualWidth, actualHeight);
 
+      // Resize canvas and container styles to match video dimensions
       [this.snapshotCanvas, this.playCanvas].forEach((canvas) => {
         canvas.style.width = actualWidth + "px";
         canvas.style.height = actualHeight + "px";
@@ -143,26 +178,31 @@ var animator = animator || {};
       return stream;
     }
 
+    /** Detach and stop the current video stream. */
     detachStream() {
-      if (!this.video.srcObject)
-        return;
+      if (!this.video.srcObject) return;
       this.video.pause();
       this.video.srcObject.getVideoTracks()[0].stop();
       this.streamOn = false;
       this.video.srcObject = null;
     }
 
+    /** Returns true if playback timer is running. */
     isPlaying() {
       return !!this.playTimer;
     }
 
+    /**
+     * Toggle live video stream on/off.
+     * Returns a promise resolving to true if playing, false if stopped.
+     */
     toggleVideo() {
       if (this.video.paused) {
         if (this.video.srcObject && this.video.srcObject.active) {
           this.streamOn = true;
           return this.video.play()
-              .then(() => { return true; })
-              .catch(() => { return false; });
+            .then(() => true)
+            .catch(() => false);
         } else {
           return this.attachStream(this.videoSourceId);
         }
@@ -170,68 +210,106 @@ var animator = animator || {};
         this.video.pause();
         this.detachStream();
         this.streamOn = false;
-        return new Promise((resolve, reject) => { resolve(false); });
+        return new Promise((resolve) => resolve(false));
       }
     }
 
+    /**
+     * Draw a captured frame onto the given context.
+     * @param {number} frameNumber - Index of frame in this.frames.
+     */
     drawFrame(frameNumber, context) {
       context.clearRect(0, 0, this.w, this.h);
       context.drawImage(this.frames[frameNumber], 0, 0, this.w, this.h);
     }
 
+    /**
+     * Capture a frame from the video stream into a canvas.
+     * Stores both the raw frame and a promise for its encoded WebP.
+     */
     capture() {
       if (!this.streamOn) return;
+
       let imageCanvas = document.createElement('canvas');
       imageCanvas.width = this.w;
       imageCanvas.height = this.h;
       let context = imageCanvas.getContext('2d', { alpha: false });
+
+      // Apply flip transform if enabled
       if (this._flip) {
         context.rotate(Math.PI);
         context.translate(-this.w, -this.h);
       }
+
+      // Draw the current video frame
       context.drawImage(this.video, 0, 0, this.w, this.h);
       this.frames.push(imageCanvas);
-      let promise = new Promise(((resolve, reject) => {
+
+      // Create promise to encode frame as WebP
+      let promise = new Promise(((resolve) => {
         if (self.requestIdleCallback) {
           requestIdleCallback(() => {
-            imageCanvas.toBlob(blob => { resolve(blob) }, 'image/webp', 0.99999);
+            imageCanvas.toBlob(blob => resolve(blob), 'image/webp', 0.99999);
           });
         } else {
-          imageCanvas.toBlob(blob => { resolve(blob) }, 'image/webp', 0.99999);
+          imageCanvas.toBlob(blob => resolve(blob), 'image/webp', 0.99999);
         }
-        // Draw onion skin if enabled
+
+        // Onion skin: overlay last captured frame onto snapshot canvas
         this.snapshotContext.clearRect(0, 0, this.w, this.h);
         if (this.onionSkinEnabled) {
           this.snapshotContext.drawImage(imageCanvas, 0, 0, this.w, this.h);
         }
       }).bind(this));
+
       this.frameWebps.push(promise);
     }
 
+    /**
+     * Undo the last captured frame.
+     * Updates onion skin preview if enabled.
+     */
     undoCapture() {
       this.frames.pop();
       this.frameWebps.pop();
       this.snapshotContext.clearRect(0, 0, this.w, this.h);
       if (this.onionSkinEnabled && this.frames.length) {
-        this.snapshotContext.drawImage(this.frames[this.frames.length - 1], 0, 0, this.w, this.h);
+        this.snapshotContext.drawImage(
+          this.frames[this.frames.length - 1], 0, 0, this.w, this.h
+        );
       }
     }
 
+    /** Calculate frame display interval in milliseconds. */
     frameTimeout() {
       return 1000.0 / this.playbackSpeed;
     }
 
+    /**
+     * Begin playback of captured frames.
+     * @param {boolean} noAudio - If true, disables audio playback.
+     */
     startPlay(noAudio) {
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve) => {
         if (!this.frames.length) {
           resolve(false);
           return;
         }
+
         this.snapshotCanvas.style.visibility = 'hidden';
         this.video.pause();
         this.drawFrame(0, this.playContext);
         this.zeroPlayTime = performance.now();
-        this.playTimer = setTimeout(this.playFrame.bind(this), this.frameTimeout(), 1, resolve);
+
+        // Schedule first frame playback
+        this.playTimer = setTimeout(
+          this.playFrame.bind(this),
+          this.frameTimeout(),
+          1,
+          resolve
+        );
+
+        // Play audio if present and enabled
         if (this.audio && !noAudio) {
           this.audio.currentTime = 0;
           this.audio.play();
@@ -239,35 +317,53 @@ var animator = animator || {};
       });
     }
 
+    /**
+     * Stop playback, cleanup timers and audio,
+     * and restore video feed if active.
+     */
     endPlay(cb) {
-      if (this.isPlaying())
-        clearTimeout(this.playTimer);
+      if (this.isPlaying()) clearTimeout(this.playTimer);
       this.playTimer = null;
-      if (this.audioRecorder && this.audioRecorder.state == "recording") {
+
+      if (this.audioRecorder && this.audioRecorder.state === "recording") {
         this.audioRecorder.stop();
       } else if (this.audio) {
         this.audio.pause();
       }
+
       this.playContext.clearRect(0, 0, this.w, this.h);
       this.snapshotCanvas.style.visibility = '';
-      if (this.streamOn)
-        this.video.play();
+
+      if (this.streamOn) this.video.play();
       if (cb) cb();
     }
 
+    /**
+     * Display a frame and schedule the next frame playback.
+     * @param {number} frameNumber - Frame index to display.
+     */
     playFrame(frameNumber, cb) {
       if (frameNumber >= this.frames.length) {
+        // Delay a moment before ending
         this.playTimer = setTimeout(this.endPlay.bind(this), 1000, cb);
       } else {
         this.drawFrame(frameNumber, this.playContext);
-        let timeout = this.zeroPlayTime + ((frameNumber + 1) * this.frameTimeout()) - performance.now();
-        this.playTimer = setTimeout(this.playFrame.bind(this), timeout, frameNumber + 1, cb);
+        let timeout = this.zeroPlayTime
+          + ((frameNumber + 1) * this.frameTimeout())
+          - performance.now();
+        this.playTimer = setTimeout(
+          this.playFrame.bind(this),
+          timeout,
+          frameNumber + 1,
+          cb
+        );
       }
     }
 
+    /** Toggle between play and stop states. */
     togglePlay() {
       if (this.isPlaying()) {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
           this.endPlay();
           resolve(true);
         });
@@ -276,14 +372,16 @@ var animator = animator || {};
       }
     }
 
+    /**
+     * Clear all frames and audio, reset canvas and metadata.
+     */
     clear() {
-      if (this.isPlaying())
-        this.endPlay();
-      if (this.audioBlob)
-        this.audioBlob = null;
+      if (this.isPlaying()) this.endPlay();
+      if (this.audioBlob) this.audioBlob = null;
       this.setAudioSrc(null);
-      if (this.frames.length === 0)
-        return;
+
+      if (this.frames.length === 0) return;
+
       this.frames = [];
       this.frameWebps = [];
       this.snapshotContext.clearRect(0, 0, this.w, this.h);
@@ -291,26 +389,35 @@ var animator = animator || {};
       this.name = null;
     }
 
+    /**
+     * Called after frames finish loading from a file.
+     * Shows last frame as onion skin and begins playback.
+     */
     loadFinished() {
       this.snapshotContext.clearRect(0, 0, this.w, this.h);
       if (this.onionSkinEnabled && this.frames.length) {
-        this.snapshotContext.drawImage(this.frames[this.frames.length - 1], 0, 0, this.w, this.h);
+        this.snapshotContext.drawImage(
+          this.frames[this.frames.length - 1], 0, 0, this.w, this.h
+        );
       }
       this.startPlay();
     }
 
+    /**
+     * Add a decoded VP8 frame into the animation sequence.
+     */
     addFrameVP8(frameOffset, blob, idx) {
       let blobURL = URL.createObjectURL(blob);
       let image = new Image(this.w, this.h);
       this.framesInFlight++;
+
       image.addEventListener("error", (evt => {
         if (evt.target.getAttribute('triedvp8l')) {
           console.log(evt);
           this.framesInFlight--;
           URL.revokeObjectURL(blobURL);
           image = null;
-          if (this.framesInFlight === 0)
-            this.loadFinished();
+          if (this.framesInFlight === 0) this.loadFinished();
         } else {
           evt.target.setAttribute('triedvp8l', true);
           URL.revokeObjectURL(blobURL);
@@ -319,23 +426,31 @@ var animator = animator || {};
           evt.target.src = blobURL;
         }
       }).bind(this));
+
       image.addEventListener("load", (evt => {
         let newCanvas = document.createElement('canvas');
         newCanvas.width = this.w;
         newCanvas.height = this.h;
-        newCanvas.getContext('2d', { alpha: false }).drawImage(evt.target, 0, 0, this.w, this.h);
+        newCanvas.getContext('2d', { alpha: false })
+          .drawImage(evt.target, 0, 0, this.w, this.h);
+
         this.frames[frameOffset + idx] = newCanvas;
-        this.frameWebps[frameOffset + idx] = new Promise((resolve, reject) => {
+        this.frameWebps[frameOffset + idx] = new Promise((resolve) => {
           resolve(blob);
         });
+
         this.framesInFlight--;
         URL.revokeObjectURL(blobURL);
-        if (this.framesInFlight === 0)
-          this.loadFinished();
+        if (this.framesInFlight === 0) this.loadFinished();
       }).bind(this));
+
       image.src = blobURL;
     }
 
+    /**
+     * Set the audio source from a blob.
+     * Revokes any existing audio object URLs.
+     */
     setAudioSrc(blob) {
       this.audioBlob = blob;
       if (this.audio) {
@@ -348,97 +463,136 @@ var animator = animator || {};
       }
     }
 
+    /**
+     * Save the animation as a WebM file.
+     * @param {string} filename - Desired filename (default: StopMotion.webm).
+     */
     save(filename) {
       filename = filename || 'StopMotion';
-      if (!filename.endsWith('.webm'))
-        filename += '.webm';
+      if (!filename.endsWith('.webm')) filename += '.webm';
       let title = filename.substr(0, filename.length - 5);
+
       return this.encode(title).then((blob => {
         this.exported = blob;
         let url = URL.createObjectURL(blob);
+
         let downloadLink = document.createElement('a');
         downloadLink.download = filename;
         downloadLink.href = url;
         downloadLink.click();
+
         URL.revokeObjectURL(url);
         return blob;
       }).bind(this));
     }
 
+    /**
+     * Encode frames (and optional audio) into a WebM file.
+     */
     encode(title) {
-      if (!this.audioBlob)
-        return webm.encode(title, this.w, this.h, this.frameTimeout(), this.frameWebps, null);
+      if (!this.audioBlob) {
+        return webm.encode(
+          title, this.w, this.h, this.frameTimeout(), this.frameWebps, null
+        );
+      }
+
       let fr = new FileReader();
       let an = this;
-      let promise = new Promise((resolve, reject) => {
-        fr.addEventListener("loadend", evt => {
-          webm.encode(title, an.w, an.h, an.frameTimeout(), an.frameWebps, fr.result)
-              .then(resolve);
+
+      return new Promise((resolve) => {
+        fr.addEventListener("loadend", () => {
+          webm.encode(
+            title, an.w, an.h, an.frameTimeout(), an.frameWebps, fr.result
+          ).then(resolve);
         });
         fr.readAsArrayBuffer(an.audioBlob);
       });
-      return promise;
     }
 
+    /**
+     * Load an animation from a WebM file.
+     * Decodes frames and audio into memory.
+     */
     load(file, finishCB, frameRateCB) {
       let an = this;
       let frameOffset = this.frames.length;
       let reader = new FileReader();
+
       reader.addEventListener("loadend", evt => {
-        webm.decode(evt.target.result,
-                    an.setDimensions.bind(an),
-                    frameRateCB,
-                    an.addFrameVP8.bind(an, frameOffset),
-                    an.setAudioSrc.bind(an));
+        webm.decode(
+          evt.target.result,
+          an.setDimensions.bind(an),
+          frameRateCB,
+          an.addFrameVP8.bind(an, frameOffset),
+          an.setAudioSrc.bind(an)
+        );
         an.name = file.name.substring(0, file.name.length - 5);
-        if (finishCB)
-          finishCB();
+        if (finishCB) finishCB();
       });
+
       reader.readAsArrayBuffer(file);
     }
 
+    /**
+     * Record audio using MediaRecorder while playback occurs.
+     */
     recordAudio(stream) {
-      let promise = new Promise(((resolve, reject) => {
+      return new Promise(((resolve) => {
         if (!this.frames.length) {
           resolve(null);
           return;
         }
+
         let state = this.audioRecorder ? this.audioRecorder.state : "inactive";
-        if (state == "recording") {
+        if (state === "recording") {
           resolve(null);
           return;
         }
-        this.audioRecorder = new MediaRecorder(stream, {mimeType: "audio/webm;codecs=opus"});
+
+        this.audioRecorder = new MediaRecorder(stream, {
+          mimeType: "audio/webm;codecs=opus"
+        });
+
         this.audioRecorder.ondataavailable = (evt => {
           this.audioChunks.push(evt.data);
         }).bind(this);
-        this.audioRecorder.onstop = (evt => {
+
+        this.audioRecorder.onstop = (() => {
           this.audioRecorder = null;
-          this.setAudioSrc(new Blob(this.audioChunks, {'type': 'audio/webm;codecs=opus'}));
+          this.setAudioSrc(new Blob(
+            this.audioChunks, { 'type': 'audio/webm;codecs=opus' }
+          ));
           this.audioChunks = [];
           resolve(this.audioBlob);
         }).bind(this);
-        this.startPlay(true);
+
+        this.startPlay(true); // Play silently while recording
         this.audioRecorder.start();
       }).bind(this));
-      return promise;
     }
 
+    /** Clear audio recording if no active recorder. */
     clearAudio() {
-      if (this.audioRecorder)
-        return;
+      if (this.audioRecorder) return;
       this.setAudioSrc(null);
     }
 
-    // --- New method to toggle onion skin
+    /**
+     * Toggle onion skin mode on/off.
+     * Updates snapshot canvas with last frame if enabled.
+     */
     toggleOnionSkin() {
       this.onionSkinEnabled = !this.onionSkinEnabled;
       this.snapshotContext.clearRect(0, 0, this.w, this.h);
+
       if (this.onionSkinEnabled && this.frames.length) {
-        this.snapshotContext.drawImage(this.frames[this.frames.length - 1], 0, 0, this.w, this.h);
+        this.snapshotContext.drawImage(
+          this.frames[this.frames.length - 1], 0, 0, this.w, this.h
+        );
       }
     }
   }
 
+  // Expose Animator class
   animator.Animator = Animator;
 })();
