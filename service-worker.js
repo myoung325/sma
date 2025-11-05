@@ -1,4 +1,4 @@
-const CACHE_NAME = 'stop-motion-cache-v13'; // Increment this version when you deploy updates
+const CACHE_NAME = 'stop-motion-cache-v14'; // Increment this version when you deploy updates
 
 const urlsToCache = [
   './',
@@ -11,6 +11,7 @@ const urlsToCache = [
   './js/webm.js',
   './images/stop-motion-192.png',
   './images/stop-motion-512.png',
+  './sounds/shutter.wav',
   // Add any other assets as needed
 ];
 
