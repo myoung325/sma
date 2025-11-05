@@ -84,6 +84,56 @@ var animator = animator || {};
 
       // Playback synchronization
       this.zeroPlayTime = 0;
+
+      // audio handling (shutter): preload short shutter sound for low latency
+      this.shutterUrl = 'sounds/shutter.ogg';
+      this.shutterAudio = null;
+      this._preloadShutter();
+    }
+
+    /**
+     * Preload shutter sound into an Audio object and also warm a small fetch
+     * so Service Worker cache gets used (if installed).
+     */
+    _preloadShutter() {
+      try {
+        // Create one Audio object and keep it for quick reuse
+        this.shutterAudio = new Audio(this.shutterUrl);
+
+        // Set low-latency hints where supported
+        this.shutterAudio.preload = 'auto';
+        // Optional: set small volume
+        // this.shutterAudio.volume = 0.9;
+
+        // Warm the resource via fetch so SW cache is used (no-op if offline cached)
+        fetch(this.shutterUrl, { cache: 'force-cache' }).catch(() => {
+          // ignore fetch errors (offline or not cached yet)
+        });
+      } catch (err) {
+        console.warn('Shutter preload failed:', err);
+        this.shutterAudio = null;
+      }
+    }
+
+    /** Play shutter sound (non-blocking). */
+    playShutter() {
+      if (!this.shutterAudio) return;
+      try {
+        // Reset playback to start and play. Use play() promise to catch errors.
+        // This avoids creating a new Audio each shot and reduces latency.
+        this.shutterAudio.currentTime = 0;
+        const p = this.shutterAudio.play();
+        if (p && p.catch) {
+          p.catch(err => {
+            // Common reasons: user gesture policy, audio device not available
+            // We ignore and let capture continue silently.
+            // Optionally you could attempt new Audio(this.shutterUrl).play();
+            console.debug('Shutter play rejected:', err);
+          });
+        }
+      } catch (e) {
+        console.warn('playShutter error:', e);
+      }
     }
 
     /** Adjust playback speed (must be > 0). */
@@ -247,6 +297,9 @@ var animator = animator || {};
      */
     capture() {
       if (!this.streamOn) return;
+
+      // play shutter sound
+      this.playShutter();
 
       let imageCanvas = document.createElement('canvas');
       imageCanvas.width = this.w;
